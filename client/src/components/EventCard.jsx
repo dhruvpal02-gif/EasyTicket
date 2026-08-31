@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { getImageUrl } from '../utils/imageUtils';
 import './EventCard.css';
 
 /** Formats a Date or ISO string as "Mon DD, YYYY" */
@@ -16,7 +17,7 @@ const EventCard = ({ event }) => {
       <div className="event-card-img-wrap">
         {event.image ? (
           <img
-            src={event.image.startsWith('/uploads') ? event.image : event.image}
+            src={getImageUrl(event.image)}
             alt={event.title}
             className="event-card-img"
           />

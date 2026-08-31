@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import useAuth from '../hooks/useAuth';
+import { getImageUrl } from '../utils/imageUtils';
 import './EventDetailPage.css';
 
 const fmtDate = (d) =>
@@ -49,7 +50,7 @@ const EventDetailPage = () => {
 
       <div className="event-detail-hero">
         {event.image ? (
-          <img src={event.image.startsWith('/uploads') ? event.image : event.image} alt={event.title} className="event-detail-img" />
+          <img src={getImageUrl(event.image)} alt={event.title} className="event-detail-img" />
         ) : (
           <div className="event-detail-img-placeholder">🎪</div>
         )}

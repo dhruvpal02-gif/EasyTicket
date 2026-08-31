@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import { getImageUrl } from '../utils/imageUtils';
 import './TicketDetailsPage.css';
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -50,7 +51,7 @@ const TicketDetailsPage = () => {
 
         {ticket.event.image && (
           <div className="ticket-hero-img">
-            <img src={ticket.event.image.startsWith('/uploads') ? ticket.event.image : ticket.event.image} alt={ticket.event.title} />
+            <img src={getImageUrl(ticket.event.image)} alt={ticket.event.title} />
           </div>
         )}
 
