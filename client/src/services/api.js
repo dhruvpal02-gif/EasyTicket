@@ -2,22 +2,23 @@ import axios from 'axios';
 
 /**
  * Pre-configured Axios instance.
- * - Vite proxy forwards /api → http://localhost:5000 during development.
+ * - Local development: Vite proxy handles /api requests.
+ * - Production: VITE_API_URL points to the deployed backend.
  * - JWT is auto-attached from localStorage.
- * - Content-Type is set to application/json for regular requests.
- *   For FormData (file uploads), the header is omitted so the browser
- *   can set the correct multipart boundary automatically.
+ * - FormData requests keep the browser-managed Content-Type boundary.
  */
-const api = axios.create({});
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '',
+});
 
 api.interceptors.request.use((config) => {
-  // Attach JWT if present
   const token = localStorage.getItem('et_token');
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  // Only set JSON content-type for non-FormData requests
   if (!(config.data instanceof FormData)) {
     config.headers['Content-Type'] = 'application/json';
   }
