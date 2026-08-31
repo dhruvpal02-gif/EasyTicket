@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment variables (never commit these)
+server/.env
+client/.env
+
+# Build output
+client/dist/
+
+# Uploaded files (store these in a CDN/cloud storage for production)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/

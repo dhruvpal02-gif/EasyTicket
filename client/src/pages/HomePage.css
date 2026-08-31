@@ -1,0 +1,46 @@
+.home-hero {
+  text-align: center;
+  padding: 2.5rem 1rem 2rem;
+}
+
+.home-hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.home-hero p {
+  color: #6b7280;
+  margin-top: 0.4rem;
+  font-size: 1rem;
+}
+
+.home-search {
+  margin-top: 1.25rem;
+  width: 100%;
+  max-width: 480px;
+  padding: 0.65rem 1rem;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.home-search:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.home-status {
+  text-align: center;
+  color: #6b7280;
+  margin-top: 2rem;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}

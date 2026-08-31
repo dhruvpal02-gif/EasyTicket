@@ -1,0 +1,190 @@
+.payment-container, .payment-success-container {
+  padding-top: 1rem;
+}
+
+.payment-header h1 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.payment-header p {
+  color: #b91c1c;
+  font-weight: 500;
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+  background: #fef2f2;
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+}
+
+.payment-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.payment-form-wrap {
+  flex: 1;
+}
+
+.payment-methods {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.method-btn {
+  flex: 1;
+  min-width: 110px;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.method-btn:hover {
+  background: #f3f4f6;
+}
+
+.method-btn.active {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4f46e5;
+}
+
+.payment-mock-ui {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.payment-mock-ui input,
+.payment-mock-ui select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.payment-summary {
+  width: 350px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 80px;
+}
+
+.payment-summary h2 {
+  font-size: 1.2rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Success Card */
+.payment-success-card {
+  background: #fff;
+  max-width: 500px;
+  margin: 2rem auto;
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+  background: #10b981;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.5rem;
+}
+
+.payment-success-card h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+  color: #111827;
+}
+
+.receipt-details {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.receipt-row:last-child {
+  margin-bottom: 0;
+  border-top: 1px dashed #d1d5db;
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.receipt-val {
+  font-weight: 600;
+  color: #111827;
+  font-family: monospace;
+}
+
+.receipt-total {
+  font-family: inherit;
+  font-size: 1.1rem;
+  color: #4f46e5;
+}
+
+.success-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.success-actions .btn {
+  flex: 1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .payment-layout {
+    flex-direction: column-reverse;
+    gap: 1.5rem;
+  }
+  
+  .payment-summary {
+    width: 100%;
+    position: static;
+  }
+  
+  .success-actions {
+    flex-direction: column;
+  }
+}
