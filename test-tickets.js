@@ -54,7 +54,7 @@ function assert(label, condition, detail) {
     time: '18:00',
     venue: 'Test Stadium',
     city: 'Test City',
-    ticketTypes: JSON.stringify([{ name: 'General', price: 100, quantity: 5 }]) // Only 5 available!
+    ticketTypes: JSON.stringify([{ name: 'VIP', price: 100, quantity: 9 }]) // Only 9 available!
   };
   const eventRes = await req('POST', '/api/events', eventPayload, orgToken);
   const eventId = eventRes.body._id;
@@ -81,9 +81,11 @@ function assert(label, condition, detail) {
   const r2 = await req('POST', '/api/tickets', bookingPayload, orgToken);
   assert('Status 403 (Forbidden)', r2.status === 403, r2.status);
 
-  console.log('\n── Test 3: Unauthenticated user cannot create booking ──────');
+  console.log('\n── Test 3: Guest user can create booking without login ───────');
   const r3 = await req('POST', '/api/tickets', bookingPayload, null);
-  assert('Status 401 (Unauthorized)', r3.status === 401, r3.status);
+  assert('Status 201', r3.status === 201, r3.status);
+  assert('Received guestToken', typeof r3.body.guestToken === 'string');
+  const guestToken = r3.body.guestToken;
 
   console.log('\n── Test 4: Quantity greater than inventory is rejected ─────');
   const r4 = await req('POST', '/api/tickets', { ...bookingPayload, quantity: 4 }, cust1Token); // only 3 left

@@ -26,6 +26,11 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
 
+        {/* Guest OR Customer routes (handled within component) */}
+        <Route path="/book/:eventId" element={<BookingPage />} />
+        <Route path="/payment/:ticketId" element={<PaymentPage />} />
+        <Route path="/tickets/:id" element={<TicketDetailsPage />} />
+
         {/* Protected routes (require login) */}
         <Route
           path="/dashboard"
@@ -44,22 +49,6 @@ function App() {
           }
         />
         <Route
-          path="/book/:eventId"
-          element={
-            <PrivateRoute>
-              <BookingPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/payment/:ticketId"
-          element={
-            <PrivateRoute>
-              <PaymentPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/my-tickets"
           element={
             <PrivateRoute>
@@ -72,14 +61,6 @@ function App() {
           element={
             <PrivateRoute>
               <VerifyTicketPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/tickets/:id"
-          element={
-            <PrivateRoute>
-              <TicketDetailsPage />
             </PrivateRoute>
           }
         />

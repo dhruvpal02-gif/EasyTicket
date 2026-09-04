@@ -10,6 +10,7 @@ const safeUser = (user) => ({
   email: user.email,
   role: user.role,
   createdAt: user.createdAt,
+  payoutDetails: user.payoutDetails,
 });
 
 // ── POST /api/auth/register ───────────────────────────────────────────────────
@@ -72,5 +73,47 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('login error:', error.message);
     return res.status(500).json({ message: 'Server error during login.' });
+  }
+};
+
+// ── PATCH /api/auth/payout-details ──────────────────────────────────────────────
+
+export const updatePayoutDetails = async (req, res) => {
+  try {
+    const { bankAccountName, bankAccountNumber, ifscCode, upiId } = req.body;
+    
+    // Validate that at least one field is provided
+    if (!bankAccountName && !bankAccountNumber && !ifscCode && !upiId) {
+      return res.status(400).json({ message: 'Please provide payout details to update.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (user.role !== 'organizer') {
+      return res.status(403).json({ message: 'Only organizers can update payout details.' });
+    }
+
+    user.payoutDetails = {
+      bankAccountName: bankAccountName || user.payoutDetails?.bankAccountName,
+      bankAccountNumber: bankAccountNumber || user.payoutDetails?.bankAccountNumber,
+      ifscCode: ifscCode || user.payoutDetails?.ifscCode,
+      upiId: upiId || user.payoutDetails?.upiId,
+    };
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      message: 'Payout details updated successfully.',
+      user: {
+        ...safeUser(updatedUser),
+        payoutDetails: updatedUser.payoutDetails,
+      }
+    });
+  } catch (error) {
+    console.error('updatePayoutDetails error:', error.message);
+    return res.status(500).json({ message: 'Server error updating payout details.' });
   }
 };

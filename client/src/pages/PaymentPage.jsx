@@ -1,29 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import './PaymentPage.css';
 
 const PaymentPage = () => {
   const { ticketId } = useParams();
+  const [searchParams] = useSearchParams();
+  const guestToken = searchParams.get('guestToken');
   const navigate = useNavigate();
 
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-  
-  const [paymentMethod, setPaymentMethod] = useState('card');
-  const [success, setSuccess] = useState(false);
-  const [paymentResult, setPaymentResult] = useState(null);
 
   useEffect(() => {
     const fetchTicket = async () => {
       try {
-        const { data } = await api.get(`/api/tickets/${ticketId}`);
+        const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
+        const { data } = await api.get(`/api/tickets/${ticketId}`, { headers });
         if (data.paymentStatus === 'paid') {
-          // Already paid
-          setSuccess(true);
-          setPaymentResult(data);
+          // Already paid, redirect to ticket details
+          navigate(`/tickets/${data._id}${guestToken ? `?guestToken=${guestToken}` : ''}`, { replace: true });
+          return;
         }
         setTicket(data);
       } catch (err) {
@@ -33,70 +32,107 @@ const PaymentPage = () => {
       }
     };
     fetchTicket();
-  }, [ticketId]);
+  }, [ticketId, guestToken]);
 
-  const handlePayment = async (action) => {
+  // Helper to load Razorpay script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleRazorpayPayment = async () => {
     setProcessing(true);
     setError('');
+    
+    const res = await loadRazorpayScript();
+    if (!res) {
+      setError('Razorpay SDK failed to load. Are you offline?');
+      setProcessing(false);
+      return;
+    }
 
     try {
-      if (action === 'pay') {
-        const { data } = await api.post(`/api/tickets/${ticketId}/pay`, { paymentMethod });
-        setSuccess(true);
-        setPaymentResult(data.ticket);
-      } else if (action === 'fail') {
-        const { data } = await api.post(`/api/tickets/${ticketId}/fail`);
-        setTicket(data.ticket);
-        setError('Payment simulation failed successfully.');
-      }
+      const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
+      
+      // 1. Create order on backend
+      const { data: orderData } = await api.post(`/api/tickets/${ticketId}/create-razorpay-order`, {}, { headers });
+      
+      // 2. Open Razorpay widget
+      const options = {
+        key: 'rzp_test_YourMockKey', // Usually passed from backend, but Razorpay SDK works with any test key id here if it's mock
+        // Ideally we fetch this from environment but for testing UI we can use a string or process.env.VITE_RAZORPAY_KEY_ID
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'EasyTicket',
+        description: `Payment for ${ticket.event.title}`,
+        order_id: orderData.order_id,
+        handler: async (response) => {
+          try {
+            setProcessing(true);
+            // 3. Verify payment on backend
+            const verifyPayload = {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            };
+            const { data: verifyData } = await api.post(`/api/tickets/${ticketId}/verify-payment`, verifyPayload, { headers });
+            
+            // Navigate directly to the ticket details
+            navigate(`/tickets/${verifyData.ticket._id}${guestToken ? `?guestToken=${guestToken}` : ''}`);
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment verification failed.');
+            setProcessing(false);
+          }
+        },
+        prefill: {
+          name: ticket.attendeeName,
+          email: ticket.customer?.email || 'guest@example.com',
+          contact: ''
+        },
+        theme: {
+          color: '#4f46e5'
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      
+      rzp.on('payment.failed', async (response) => {
+        setError(`Payment Failed: ${response.error.description}`);
+        try {
+          await api.post(`/api/tickets/${ticketId}/fail`, {}, { headers });
+          setTicket({ ...ticket, paymentStatus: 'failed' });
+        } catch(e) {
+          console.error(e);
+        }
+        setProcessing(false);
+      });
+
+      rzp.open();
+      // Keep processing true while modal is open to prevent duplicate clicks
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment simulation error.');
-    } finally {
+      setError(err.response?.data?.message || 'Failed to initialize payment.');
       setProcessing(false);
-      window.scrollTo(0, 0);
     }
   };
 
   if (loading) return <div className="page-container"><p>Loading payment...</p></div>;
-  if (!ticket && !success) return <div className="page-container"><div className="alert alert-error">{error || 'Ticket not found.'}</div></div>;
-
-  if (success && paymentResult) {
-    return (
-      <div className="page-container payment-success-container">
-        <div className="payment-success-card">
-          <div className="success-icon">✓</div>
-          <h1>Payment Successful</h1>
-          <p>Your booking for <strong>{paymentResult.event.title}</strong> is confirmed!</p>
-          
-          <div className="receipt-details">
-            <div className="receipt-row">
-              <span>Payment ID</span>
-              <span className="receipt-val">{paymentResult.paymentId}</span>
-            </div>
-            <div className="receipt-row">
-              <span>Ticket ID</span>
-              <span className="receipt-val">{paymentResult.ticketId}</span>
-            </div>
-            <div className="receipt-row">
-              <span>Amount Paid</span>
-              <span className="receipt-val receipt-total">₹{paymentResult.totalAmount}</span>
-            </div>
-          </div>
-
-          <div className="success-actions">
-            <Link to={`/tickets/${paymentResult._id}`} className="btn btn-primary">View Ticket</Link>
-            <Link to="/my-tickets" className="btn btn-outline">My Tickets</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!ticket) return <div className="page-container"><div className="alert alert-error">{error || 'Ticket not found.'}</div></div>;
 
   return (
     <div className="page-container payment-container">
       <div className="payment-header">
         <h1>Complete Payment</h1>
-        <p>Demo Payment — No real money will be charged.</p>
+        <p>Proceed to securely pay for your ticket using Razorpay.</p>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -107,96 +143,14 @@ const PaymentPage = () => {
 
       <div className="payment-layout">
         <div className="payment-form-wrap">
-          <div className="payment-methods">
-            <button 
-              type="button" 
-              className={`method-btn ${paymentMethod === 'card' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('card')}
-            >
-              Credit / Debit Card
-            </button>
-            <button 
-              type="button" 
-              className={`method-btn ${paymentMethod === 'upi' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('upi')}
-            >
-              UPI
-            </button>
-            <button 
-              type="button" 
-              className={`method-btn ${paymentMethod === 'netbanking' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('netbanking')}
-            >
-              Net Banking
-            </button>
-          </div>
-
-          <div className="payment-mock-ui">
-            {paymentMethod === 'card' && (
-              <div className="mock-card-form">
-                <div className="form-group">
-                  <label>Cardholder Name</label>
-                  <input type="text" placeholder="John Doe" defaultValue="Demo User" />
-                </div>
-                <div className="form-group">
-                  <label>Card Number</label>
-                  <input type="text" placeholder="0000 0000 0000 0000" defaultValue="4111 1111 1111 1111" />
-                </div>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Expiry Date</label>
-                    <input type="text" placeholder="MM/YY" defaultValue="12/28" />
-                  </div>
-                  <div className="form-group">
-                    <label>CVV</label>
-                    <input type="text" placeholder="123" defaultValue="123" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {paymentMethod === 'upi' && (
-              <div className="mock-upi-form">
-                <div className="form-group">
-                  <label>UPI ID</label>
-                  <input type="text" placeholder="example@upi" defaultValue="demo@ybl" />
-                </div>
-                <p className="help-text">A payment request will be simulated.</p>
-              </div>
-            )}
-
-            {paymentMethod === 'netbanking' && (
-              <div className="mock-bank-form">
-                <div className="form-group">
-                  <label>Select Bank</label>
-                  <select defaultValue="sbi">
-                    <option value="sbi">State Bank of India</option>
-                    <option value="hdfc">HDFC Bank</option>
-                    <option value="icici">ICICI Bank</option>
-                    <option value="axis">Axis Bank</option>
-                  </select>
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="payment-sim-actions">
             <button 
               type="button" 
               className="btn btn-primary btn-full" 
-              onClick={() => handlePayment('pay')}
+              onClick={handleRazorpayPayment}
               disabled={processing || ticket.paymentStatus === 'paid'}
             >
-              {processing ? 'Processing...' : `Simulate Successful Payment (₹${ticket.totalAmount})`}
-            </button>
-            <button 
-              type="button" 
-              className="btn btn-outline btn-full" 
-              onClick={() => handlePayment('fail')}
-              disabled={processing || ticket.paymentStatus === 'paid'}
-              style={{ marginTop: '1rem', borderColor: '#fecaca', color: '#b91c1c' }}
-            >
-              Simulate Failed Payment
+              {processing ? 'Processing...' : `Pay Now (₹${ticket.totalAmount})`}
             </button>
           </div>
         </div>

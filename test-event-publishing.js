@@ -91,6 +91,7 @@ function assert(label, condition, detail) {
   const r10 = await req('GET', `/api/events/${eventId}/qr`, null, orgToken);
   assert('Status 200', r10.status === 200, r10.status);
   assert('Has URL', typeof r10.body.url === 'string');
+  console.log('  Event URL returned:', r10.body.url);
   assert('Has QR Data URI', typeof r10.body.qrCodeDataUri === 'string' && r10.body.qrCodeDataUri.startsWith('data:image/png;base64,'));
 
   console.log('\n── Test 11: Customer can now view the published event ────────');

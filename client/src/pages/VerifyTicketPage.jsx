@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import api from '../services/api';
+import { getImageUrl } from '../utils/imageUtils';
 import './VerifyTicketPage.css';
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -79,14 +80,14 @@ const VerifyTicketPage = () => {
 
   const verifyBackend = async (ticketId, qrToken) => {
     setLoading(true);
-    setError('');
+    setError(null);
     setResult(null);
 
     try {
       const { data } = await api.post('/api/tickets/verify', { ticketId, qrToken });
-      setResult(data.ticket);
+      setResult(data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Verification failed due to server error.');
+      setError(err.response?.data || { message: 'Verification failed due to server error.' });
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,7 @@ const VerifyTicketPage = () => {
 
   const scanAgain = () => {
     setResult(null);
-    setError('');
+    setError(null);
     setScannerActive(true);
     setShowManual(false);
     setManualTicketId('');
@@ -114,27 +115,46 @@ const VerifyTicketPage = () => {
 
       {/* Result UI - Success */}
       {result && (
-        <div className="verify-card success-card">
+        <div className={`verify-card ${result.entryPolicy === 'single' ? 'bg-green' : 'bg-blue'}`}>
           <div className="verify-icon">✅</div>
-          <h2>VALID TICKET</h2>
+          <h2 className="text-white">
+            {result.entryPolicy === 'single' ? 'VALID: SINGLE ENTRY' : 'VALID: MULTIPLE ENTRY (PASS)'}
+          </h2>
           <div className="verify-details">
-            <div className="v-row"><span>Event:</span> <strong>{result.event.title}</strong></div>
-            <div className="v-row"><span>Date:</span> <strong>{fmtDate(result.event.date)} at {result.event.time}</strong></div>
-            <div className="v-row"><span>Ticket Type:</span> <strong>{result.ticketTypeName} (Qty: {result.quantity})</strong></div>
-            <div className="v-row"><span>Attendee:</span> <strong>{result.attendeeName}</strong></div>
-            <div className="v-row"><span>Ticket ID:</span> <strong>{result.ticketId}</strong></div>
+            {result.ticket?.attendeePhoto && (
+              <div className="attendee-photo-container">
+                <img src={getImageUrl(result.ticket.attendeePhoto)} alt="Attendee" className="attendee-photo" />
+              </div>
+            )}
+            <div className="v-row"><span>Attendee Name:</span> <strong>{result.ticket?.attendeeName}</strong></div>
+            <div className="v-row"><span>Ticket Type:</span> <strong>{result.ticket?.ticketTypeName} (Qty: {result.ticket?.quantity})</strong></div>
+            {result.entryPolicy === 'multiple' && (
+              <div className="v-row"><span>Scan Count:</span> <strong>{result.scanCount}</strong></div>
+            )}
+            <div className="v-row"><span>Event:</span> <strong>{result.ticket?.event?.title}</strong></div>
+            <div className="v-row"><span>Ticket ID:</span> <strong>{result.ticket?.ticketId}</strong></div>
           </div>
-          <button className="btn btn-primary btn-full" onClick={scanAgain}>Scan Another Ticket</button>
+          <button className="btn btn-full btn-scan-next" onClick={scanAgain}>Scan Next Ticket</button>
         </div>
       )}
 
       {/* Result UI - Error */}
       {error && !loading && (
-        <div className="verify-card error-card">
+        <div className="verify-card bg-red">
           <div className="verify-icon">❌</div>
-          <h2>INVALID TICKET</h2>
-          <p className="verify-error-msg">{error}</p>
-          <button className="btn btn-primary btn-full" onClick={scanAgain}>Try Again</button>
+          <h2 className="text-white">
+            {error.error === 'Ticket Already Used' ? '⚠️ TICKET ALREADY USED' : 'INVALID TICKET'}
+          </h2>
+          <div className="verify-details error-details">
+            <p className="verify-error-msg">{error.error || error.message || 'Verification failed.'}</p>
+            {error.scannedAt && (
+              <div className="v-row">
+                <span>First Scanned At:</span>
+                <strong>{fmtDate(error.scannedAt)} {new Date(error.scannedAt).toLocaleTimeString('en-IN')}</strong>
+              </div>
+            )}
+          </div>
+          <button className="btn btn-full btn-scan-next" onClick={scanAgain}>Scan Next Ticket</button>
         </div>
       )}
 

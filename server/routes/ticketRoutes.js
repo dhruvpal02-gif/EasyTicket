@@ -5,7 +5,8 @@ import {
   getMyTickets,
   getTicketById,
   getEventTickets,
-  processPayment,
+  createRazorpayOrder,
+  verifyPayment,
   failPayment,
   verifyTicket,
 } from '../controllers/ticketController.js';
@@ -17,7 +18,8 @@ const router = express.Router();
 router.get('/my-tickets', protect, requireRole('customer'), getMyTickets);
 router.post('/', optionalAuth, ...createTicket);
 router.get('/:id', optionalAuth, getTicketById);
-router.post('/:id/pay', optionalAuth, processPayment);
+router.post('/:id/create-razorpay-order', optionalAuth, createRazorpayOrder);
+router.post('/:id/verify-payment', optionalAuth, verifyPayment);
 router.post('/:id/fail', optionalAuth, failPayment);
 
 // ── Organizer Routes ──────────────────────────────────────────────────────────

@@ -76,9 +76,9 @@ function assert(label, condition, detail) {
   assert('Ticket status is pending', ticketRes.body.status === 'pending', ticketRes.body.status);
   assert('PaymentStatus is pending', ticketRes.body.paymentStatus === 'pending', ticketRes.body.paymentStatus);
 
-  console.log('\n── Test 2: Unauthenticated user cannot pay ─────────────────');
+  console.log('\n── Test 2: Unauthenticated user without guest token cannot pay ──');
   const r2 = await req('POST', `/api/tickets/${ticketId}/pay`, { paymentMethod: 'card' }, null);
-  assert('Status 401', r2.status === 401, r2.status);
+  assert('Status 403', r2.status === 403, r2.status);
 
   console.log('\n── Test 3: Organizer cannot pay for customer ticket ────────');
   const r3 = await req('POST', `/api/tickets/${ticketId}/pay`, { paymentMethod: 'card' }, orgToken);

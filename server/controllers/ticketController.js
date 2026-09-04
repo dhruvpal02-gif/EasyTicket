@@ -3,6 +3,7 @@ import Event from '../models/Event.js';
 import { customerPhotoUpload } from '../middleware/uploadMiddleware.js';
 import crypto from 'crypto';
 import QRCode from 'qrcode';
+import Razorpay from 'razorpay';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const runUploadIfMultipart = (req, res, next) => {
@@ -196,12 +197,9 @@ export const getEventTickets = async (req, res) => {
   }
 };
 
-// ── POST /api/tickets/:id/pay (Customer) ──────────────────────────────────────
-export const processPayment = async (req, res) => {
+// ── POST /api/tickets/:id/create-razorpay-order (Customer) ────────────────────
+export const createRazorpayOrder = async (req, res) => {
   try {
-    const { paymentMethod } = req.body;
-    
-    // We explicitly do NOT accept amount or real card details from the frontend
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
 
@@ -221,21 +219,67 @@ export const processPayment = async (req, res) => {
       return res.status(400).json({ message: 'This ticket is already paid.' });
     }
     
-    // Simulate payment ID generation (e.g., from a gateway like Stripe/Razorpay)
-    const mockPaymentId = 'PAY-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const instance = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
 
-    // Update ticket securely
+    const options = {
+      amount: Math.round(ticket.totalAmount * 100), // paise
+      currency: 'INR',
+      receipt: ticket._id.toString(),
+    };
+
+    const order = await instance.orders.create(options);
+
+    return res.json({ order_id: order.id, amount: order.amount, currency: order.currency });
+  } catch (error) {
+    console.error('createRazorpayOrder error:', error);
+    return res.status(500).json({ message: 'Payment processing failed.' });
+  }
+};
+
+// ── POST /api/tickets/:id/verify-payment (Customer) ───────────────────────────
+export const verifyPayment = async (req, res) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    
+    const ticket = await Ticket.findById(req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
+
+    const guestToken = req.headers['x-guest-token'] || req.query.guestToken;
+    let authorized = false;
+    if (req.user && ticket.customer && ticket.customer.toString() === req.user._id.toString()) authorized = true;
+    if (!req.user && ticket.guestToken && ticket.guestToken === guestToken) authorized = true;
+    if (!authorized) return res.status(403).json({ message: 'Unauthorized.' });
+
+    if (ticket.paymentStatus === 'paid') {
+      return res.status(400).json({ message: 'This ticket is already paid.' });
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      ticket.paymentStatus = 'failed';
+      ticket.status = 'cancelled';
+      await ticket.save();
+      return res.status(400).json({ message: 'Payment verification failed (Invalid signature).' });
+    }
+
     ticket.paymentStatus = 'paid';
     ticket.status = 'confirmed';
-    ticket.paymentMethod = paymentMethod || 'card';
-    ticket.paymentId = mockPaymentId;
+    ticket.paymentId = razorpay_payment_id;
+    ticket.paymentMethod = 'razorpay';
     ticket.paidAt = new Date();
     await ticket.save();
 
     return res.json({ message: 'Payment successful', ticket });
   } catch (error) {
-    console.error('processPayment error:', error.message);
-    return res.status(500).json({ message: 'Payment processing failed.' });
+    console.error('verifyPayment error:', error);
+    return res.status(500).json({ message: 'Failed to verify payment.' });
   }
 };
 

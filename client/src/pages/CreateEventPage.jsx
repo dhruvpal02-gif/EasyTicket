@@ -23,6 +23,9 @@ const CreateEventPage = () => {
     { name: 'Regular', price: 0, quantity: 100, description: 'Standard admission' }
   ]);
 
+  const [eventTemplate, setEventTemplate] = useState('mela');
+  const [entryPolicy, setEntryPolicy] = useState('multiple');
+
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -30,6 +33,15 @@ const CreateEventPage = () => {
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setImage(e.target.files[0]);
+    }
+  };
+
+  const handleTemplateSelect = (template) => {
+    setEventTemplate(template);
+    if (template === 'mela' || template === 'zoo') {
+      setEntryPolicy('multiple');
+    } else if (template === 'concert') {
+      setEntryPolicy('single');
     }
   };
 
@@ -76,6 +88,8 @@ const CreateEventPage = () => {
       const formData = new FormData();
       Object.keys(form).forEach(key => formData.append(key, form[key]));
       formData.append('ticketTypes', JSON.stringify(ticketTypes));
+      formData.append('eventTemplate', eventTemplate);
+      formData.append('entryPolicy', entryPolicy);
       if (image) {
         formData.append('image', image);
       }
@@ -100,8 +114,52 @@ const CreateEventPage = () => {
       {error && <div className="alert alert-error">{error}</div>}
 
       <form onSubmit={handleSubmit} className="create-event-form" noValidate>
+        
         <section className="form-section">
-          <h2>1. Event Details</h2>
+          <h2>1. Event Template</h2>
+          <p className="help-text" style={{ marginBottom: '1rem' }}>Choose an event type to configure default entry rules.</p>
+          
+          <div className="template-grid">
+            <div className={`template-card ${eventTemplate === 'mela' ? 'active' : ''}`} onClick={() => handleTemplateSelect('mela')}>
+              <div className="template-icon">🎪</div>
+              <div className="template-title">Local Mela / Fair</div>
+              <div className="template-desc">Allows attendees to enter and exit multiple times.</div>
+            </div>
+            <div className={`template-card ${eventTemplate === 'zoo' ? 'active' : ''}`} onClick={() => handleTemplateSelect('zoo')}>
+              <div className="template-icon">🦁</div>
+              <div className="template-title">Zoo / Museum / Parks</div>
+              <div className="template-desc">Allows attendees to enter and exit multiple times.</div>
+            </div>
+            <div className={`template-card ${eventTemplate === 'concert' ? 'active' : ''}`} onClick={() => handleTemplateSelect('concert')}>
+              <div className="template-icon">🎤</div>
+              <div className="template-title">Concert / Stage Show</div>
+              <div className="template-desc">Strict single entry. Cannot re-enter once scanned.</div>
+            </div>
+            <div className={`template-card ${eventTemplate === 'custom' ? 'active' : ''}`} onClick={() => handleTemplateSelect('custom')}>
+              <div className="template-icon">⚙️</div>
+              <div className="template-title">Custom / Advanced</div>
+              <div className="template-desc">Manually configure entry rules.</div>
+            </div>
+          </div>
+
+          {eventTemplate === 'custom' && (
+            <div className="form-group" style={{ marginTop: '1rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+              <label htmlFor="entryPolicy" style={{ fontWeight: 600, color: '#111827', marginBottom: '0.5rem', display: 'block' }}>Custom Entry Policy</label>
+              <select 
+                id="entryPolicy" 
+                value={entryPolicy} 
+                onChange={(e) => setEntryPolicy(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
+              >
+                <option value="single">Strict Single Entry (One-time scan)</option>
+                <option value="multiple">Multiple Entry (In-and-out allowed)</option>
+              </select>
+            </div>
+          )}
+        </section>
+
+        <section className="form-section">
+          <h2>2. Event Details</h2>
           <div className="form-group">
             <label htmlFor="title">Event Title</label>
             <input type="text" id="title" name="title" value={form.title} onChange={handleChange} placeholder="e.g. Summer Music Festival" required />
@@ -138,7 +196,7 @@ const CreateEventPage = () => {
         </section>
 
         <section className="form-section">
-          <h2>2. Ticket Types</h2>
+          <h2>3. Ticket Types</h2>
           <p className="help-text" style={{ marginBottom: '1rem' }}>Add the different types of tickets available for your event.</p>
           
           <div className="ticket-types-list">

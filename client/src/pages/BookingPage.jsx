@@ -80,7 +80,11 @@ const BookingPage = () => {
 
       const { data } = await api.post('/api/tickets', formData);
       // Redirect to payment flow
-      navigate(`/payment/${data._id}`);
+      if (data.guestToken) {
+        navigate(`/payment/${data._id}?guestToken=${data.guestToken}`);
+      } else {
+        navigate(`/payment/${data._id}`);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Booking failed. Please try again.');
       window.scrollTo(0, 0);

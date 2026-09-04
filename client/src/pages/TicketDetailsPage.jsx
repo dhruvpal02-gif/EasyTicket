@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import html2canvas from 'html2canvas';
 import api from '../services/api';
 import { getImageUrl } from '../utils/imageUtils';
 import './TicketDetailsPage.css';
@@ -9,14 +10,20 @@ const fmtTime = (d) => new Date(d).toLocaleTimeString('en-IN', { hour: '2-digit'
 
 const TicketDetailsPage = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const guestToken = searchParams.get('guestToken');
+  const ticketRef = useRef(null);
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     const fetchTicket = async () => {
       try {
-        const { data } = await api.get(`/api/tickets/${id}`);
+        const headers = guestToken ? { 'X-Guest-Token': guestToken } : {};
+        const { data } = await api.get(`/api/tickets/${id}`, { headers });
         setTicket(data);
       } catch (err) {
         setError('Failed to load ticket details.');
@@ -25,10 +32,40 @@ const TicketDetailsPage = () => {
       }
     };
     fetchTicket();
-  }, [id]);
+  }, [id, guestToken]);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadTicket = async () => {
+    if (!ticketRef.current) return;
+    setDownloading(true);
+    
+    try {
+      // Temporarily hide actions we don't want in the screenshot
+      const actions = ticketRef.current.querySelector('.ticket-footer-actions');
+      if (actions) actions.style.display = 'none';
+
+      const canvas = await html2canvas(ticketRef.current, {
+        scale: 2, // High quality
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      if (actions) actions.style.display = 'flex';
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      const link = document.createElement('a');
+      link.download = `Ticket_${ticket.ticketId}.jpg`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Error generating ticket image:', err);
+      alert('Failed to download ticket image.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading) return <div className="page-container"><p>Loading ticket...</p></div>;
@@ -37,13 +74,17 @@ const TicketDetailsPage = () => {
   return (
     <div className="page-container ticket-detail-container">
       <div className="ticket-actions no-print">
-        <Link to="/my-tickets" className="back-link">← Back to My Tickets</Link>
+        {guestToken ? (
+          <Link to="/" className="back-link">← Back to Events</Link>
+        ) : (
+          <Link to="/my-tickets" className="back-link">← Back to My Tickets</Link>
+        )}
         {ticket.status === 'confirmed' && (
           <button className="btn btn-outline" onClick={handlePrint}>🖨️ Print / Save PDF</button>
         )}
       </div>
       
-      <div className="ticket-paper">
+      <div className="ticket-paper" ref={ticketRef}>
         <div className="ticket-top">
           <div className="ticket-branding">EasyTicket</div>
           <div className={`ticket-status-badge status-${ticket.status}`}>{ticket.status}</div>
@@ -51,7 +92,7 @@ const TicketDetailsPage = () => {
 
         {ticket.event.image && (
           <div className="ticket-hero-img">
-            <img src={getImageUrl(ticket.event.image)} alt={ticket.event.title} />
+            <img src={getImageUrl(ticket.event.image)} alt={ticket.event.title} crossOrigin="anonymous" />
           </div>
         )}
 
@@ -127,7 +168,17 @@ const TicketDetailsPage = () => {
               <Link to={`/payment/${ticket._id}`} className="btn btn-primary">Pay Now</Link>
             </div>
           ) : (
-            <p>Please present this digital ticket at the venue.</p>
+            <div className="ticket-footer-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <p>Please present this digital ticket at the venue.</p>
+              <button 
+                className="btn btn-primary" 
+                style={{ width: '100%', marginTop: '1rem', padding: '1rem', fontSize: '1.1rem', fontWeight: '700', background: '#10b981', borderColor: '#10b981' }}
+                onClick={handleDownloadTicket}
+                disabled={downloading}
+              >
+                {downloading ? 'Generating Image...' : '📥 Download Ticket to Phone'}
+              </button>
+            </div>
           )}
         </div>
       </div>

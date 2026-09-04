@@ -30,6 +30,12 @@ const userSchema = new mongoose.Schema(
       },
       required: [true, 'Role is required'],
     },
+    payoutDetails: {
+      bankAccountName: { type: String, trim: true },
+      bankAccountNumber: { type: String, trim: true },
+      ifscCode: { type: String, trim: true },
+      upiId: { type: String, trim: true },
+    },
   },
   { timestamps: true }
 );

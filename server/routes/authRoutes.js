@@ -1,6 +1,6 @@
 import express from 'express';
-import { register, login } from '../controllers/authController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { register, login, updatePayoutDetails } from '../controllers/authController.js';
+import { protect, requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -8,10 +8,11 @@ const router = express.Router();
 router.post('/register', register);
 router.post('/login', login);
 
-// Protected test route — used during verification to confirm the
-// protect middleware works correctly. Can be removed before production.
+// Protected routes
 router.get('/me', protect, (req, res) => {
   res.json({ user: req.user });
 });
+
+router.patch('/payout-details', protect, requireRole('organizer'), updatePayoutDetails);
 
 export default router;

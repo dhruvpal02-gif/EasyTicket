@@ -106,6 +106,54 @@
   padding-top: 1rem;
 }
 
+/* Template Cards */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.template-card {
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.template-card:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.template-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.template-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.template-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.template-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 640px) {
   .form-row {
@@ -128,5 +176,9 @@
   
   .form-ticket-card {
     padding: 1rem;
+  }
+
+  .template-grid {
+    grid-template-columns: 1fr;
   }
 }

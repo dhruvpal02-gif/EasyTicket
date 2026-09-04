@@ -29,7 +29,7 @@ function assert(label, condition, detail) {
 }
 
 (async () => {
-  console.log('── Setup: Create Test Users, Event, & Ticket ──');
+  console.log('── Setup: Create Test Users ──');
   
   const orgEmail = 'org_' + Date.now() + '@example.com';
   const orgRes = await req('POST', '/api/auth/register', { name: 'Organizer', email: orgEmail, password: 'password123', role: 'organizer' });
@@ -42,74 +42,135 @@ function assert(label, condition, detail) {
   const cust1Email = 'cust1_' + Date.now() + '@example.com';
   const cust1Res = await req('POST', '/api/auth/register', { name: 'Customer 1', email: cust1Email, password: 'password123', role: 'customer' });
   const cust1Token = cust1Res.body.token;
-  
-  const eventRes = await req('POST', '/api/events', {
-    title: 'Verify Test Event', description: 'Testing verification', date: '2028-04-01', time: '20:00', venue: 'V', city: 'C',
-    ticketTypes: JSON.stringify([{ name: 'General', price: 100, quantity: 10 }])
+
+  // ── Single-entry event (default / concert) ──
+  console.log('\n── Setup: Single-Entry Event (concert) ──');
+  const singleEventRes = await req('POST', '/api/events', {
+    title: 'Concert Event', description: 'Single entry', date: '2028-04-01', time: '20:00', venue: 'Arena', city: 'City',
+    ticketTypes: JSON.stringify([{ name: 'General', price: 100, quantity: 10 }]),
+    eventTemplate: 'concert', entryPolicy: 'single'
   }, orgToken);
+  const singleEventId = singleEventRes.body._id;
+  const singleTypeId = singleEventRes.body.ticketTypes[0]._id;
+
+  // ── Multiple-entry event (mela) ──
+  console.log('── Setup: Multiple-Entry Event (mela) ──');
+  const multiEventRes = await req('POST', '/api/events', {
+    title: 'Mela Event', description: 'Multiple entry', date: '2028-05-01', time: '10:00', venue: 'Grounds', city: 'City',
+    ticketTypes: JSON.stringify([{ name: 'Pass', price: 50, quantity: 10 }]),
+    eventTemplate: 'mela', entryPolicy: 'multiple'
+  }, orgToken);
+  const multiEventId = multiEventRes.body._id;
+  const multiTypeId = multiEventRes.body.ticketTypes[0]._id;
+
+  // ── Create and pay tickets ──
+  console.log('── Setup: Create & Pay Tickets ──');
   
-  const eventId = eventRes.body._id;
-  const ticketTypeId = eventRes.body.ticketTypes[0]._id;
-
-  // Ticket 1: Will be Paid
-  const ticket1Res = await req('POST', '/api/tickets', {
-    eventId, ticketTypeId, quantity: 1, attendeeName: 'Customer 1', attendeeEmail: 'c1@test.com', attendeePhone: '123'
+  // Single-entry ticket
+  const t1Res = await req('POST', '/api/tickets', {
+    eventId: singleEventId, ticketTypeId: singleTypeId, quantity: 1,
+    attendeeName: 'Alice', attendeeEmail: 'alice@test.com', attendeePhone: '111'
   }, cust1Token);
-  const ticket1Id = ticket1Res.body.ticketId;
-  const ticket1DbId = ticket1Res.body._id;
+  const t1Id = t1Res.body.ticketId;
+  const t1DbId = t1Res.body._id;
+  const t1QrToken = t1Res.body.qrToken;
+  await req('POST', `/api/tickets/${t1DbId}/pay`, { paymentMethod: 'upi' }, cust1Token);
 
-  // We need to fetch the raw qrToken directly from DB since our GET API hides it
-  // For testing, we'll extract it using a direct DB call or a temporary mock since this script is external.
-  // Actually, we can get it from the createTicket response! createTicket DOES return it.
-  const ticket1Token = ticket1Res.body.qrToken;
-  
-  // Pay for Ticket 1
-  await req('POST', `/api/tickets/${ticket1DbId}/pay`, { paymentMethod: 'upi' }, cust1Token);
-
-  // Ticket 2: Pending
-  const ticket2Res = await req('POST', '/api/tickets', {
-    eventId, ticketTypeId, quantity: 1, attendeeName: 'Customer 1', attendeeEmail: 'c1@test.com', attendeePhone: '123'
+  // Multi-entry ticket
+  const t2Res = await req('POST', '/api/tickets', {
+    eventId: multiEventId, ticketTypeId: multiTypeId, quantity: 1,
+    attendeeName: 'Bob', attendeeEmail: 'bob@test.com', attendeePhone: '222'
   }, cust1Token);
-  const ticket2Id = ticket2Res.body.ticketId;
-  const ticket2Token = ticket2Res.body.qrToken;
+  const t2Id = t2Res.body.ticketId;
+  const t2DbId = t2Res.body._id;
+  const t2QrToken = t2Res.body.qrToken;
+  await req('POST', `/api/tickets/${t2DbId}/pay`, { paymentMethod: 'card' }, cust1Token);
 
-  console.log('\n── Test 1: Organizer can verify a valid ticket for their own event ──');
-  const r1 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: ticket1Token }, orgToken);
+  // Unpaid ticket for testing
+  const t3Res = await req('POST', '/api/tickets', {
+    eventId: singleEventId, ticketTypeId: singleTypeId, quantity: 1,
+    attendeeName: 'Charlie', attendeeEmail: 'charlie@test.com', attendeePhone: '333'
+  }, cust1Token);
+  const t3Id = t3Res.body.ticketId;
+  const t3QrToken = t3Res.body.qrToken;
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // SINGLE-ENTRY TESTS
+  // ════════════════════════════════════════════════════════════════════════════
+
+  console.log('\n── Test 1: First scan of single-entry ticket succeeds ──');
+  const r1 = await req('POST', '/api/tickets/verify', { ticketId: t1Id, qrToken: t1QrToken }, orgToken);
   assert('Status 200', r1.status === 200, r1.status);
-  assert('Response is valid: true', r1.body.valid === true);
-  assert('Returns correct attendee', r1.body.ticket.attendeeName === 'Customer 1');
+  assert('valid: true', r1.body.valid === true);
+  assert('entryPolicy: single', r1.body.entryPolicy === 'single');
+  assert('scanCount: 1', r1.body.scanCount === 1);
+  assert('isScanned: true', r1.body.ticket.isScanned === true);
+  assert('scannedAt is set', !!r1.body.ticket.scannedAt);
+  assert('Returns attendeeName', r1.body.ticket.attendeeName === 'Alice');
   assert('Does NOT return qrToken', r1.body.ticket.qrToken === undefined);
-  assert('Does NOT return password/JWTs', r1.body.ticket.password === undefined);
 
-  console.log('\n── Test 2: Correct ticketId + incorrect qrToken → invalid ───────────');
-  const r2 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: 'wrongtoken' }, orgToken);
+  console.log('\n── Test 2: Second scan of single-entry ticket is REJECTED ──');
+  const r2 = await req('POST', '/api/tickets/verify', { ticketId: t1Id, qrToken: t1QrToken }, orgToken);
   assert('Status 400', r2.status === 400, r2.status);
+  assert('Error: Ticket Already Used', r2.body.error === 'Ticket Already Used');
+  assert('Returns scannedAt', !!r2.body.scannedAt);
 
-  console.log('\n── Test 3: Organizer cannot verify another organizer\'s ticket ────────');
-  const r3 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: ticket1Token }, org2Token);
-  assert('Status 403', r3.status === 403, r3.status);
+  // ════════════════════════════════════════════════════════════════════════════
+  // MULTIPLE-ENTRY TESTS
+  // ════════════════════════════════════════════════════════════════════════════
 
-  console.log('\n── Test 4: Customer cannot use the verification endpoint ────────────');
-  const r4 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: ticket1Token }, cust1Token);
-  assert('Status 403', r4.status === 403, r4.status);
+  console.log('\n── Test 3: First scan of multiple-entry ticket succeeds ──');
+  const r3 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, orgToken);
+  assert('Status 200', r3.status === 200, r3.status);
+  assert('valid: true', r3.body.valid === true);
+  assert('entryPolicy: multiple', r3.body.entryPolicy === 'multiple');
+  assert('scanCount: 1', r3.body.scanCount === 1);
+  assert('isScanned is still false', r3.body.ticket.isScanned === false);
 
-  console.log('\n── Test 5: Unauthenticated user cannot verify ───────────────────────');
-  const r5 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: ticket1Token }, null);
-  assert('Status 401', r5.status === 401, r5.status);
+  console.log('\n── Test 4: Second scan of multiple-entry ticket ALSO succeeds ──');
+  const r4 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, orgToken);
+  assert('Status 200', r4.status === 200, r4.status);
+  assert('scanCount: 2', r4.body.scanCount === 2);
 
-  console.log('\n── Test 6: Invalid ticketId → invalid ───────────────────────────────');
-  const r6 = await req('POST', '/api/tickets/verify', { ticketId: 'TKT-FAKE', qrToken: ticket1Token }, orgToken);
-  assert('Status 404', r6.status === 404, r6.status);
+  console.log('\n── Test 5: Third scan increments scanCount ──');
+  const r5 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, orgToken);
+  assert('Status 200', r5.status === 200, r5.status);
+  assert('scanCount: 3', r5.body.scanCount === 3);
 
-  console.log('\n── Test 7: Pending payment ticket → invalid ─────────────────────────');
-  const r7 = await req('POST', '/api/tickets/verify', { ticketId: ticket2Id, qrToken: ticket2Token }, orgToken);
-  assert('Status 400', r7.status === 400, r7.status);
-  assert('Message explains pending status', r7.body.message.includes('pending'), r7.body.message);
+  // ════════════════════════════════════════════════════════════════════════════
+  // SECURITY & EDGE CASE TESTS
+  // ════════════════════════════════════════════════════════════════════════════
 
-  console.log('\n── Test 8: Valid ticket remains unchanged after verification ────────');
-  // Re-verify ticket 1 to ensure it didn't change status to 'used'
-  const r8 = await req('POST', '/api/tickets/verify', { ticketId: ticket1Id, qrToken: ticket1Token }, orgToken);
-  assert('Status is still confirmed', r8.body.ticket.status === 'confirmed', r8.body.ticket.status);
+  console.log('\n── Test 6: Wrong qrToken → rejected ──');
+  const r6 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: 'wrongtoken' }, orgToken);
+  assert('Status 400', r6.status === 400, r6.status);
+
+  console.log('\n── Test 7: Other organizer cannot verify ──');
+  const r7 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, org2Token);
+  assert('Status 403', r7.status === 403, r7.status);
+
+  console.log('\n── Test 8: Customer cannot verify ──');
+  const r8 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, cust1Token);
+  assert('Status 403', r8.status === 403, r8.status);
+
+  console.log('\n── Test 9: Unauthenticated cannot verify ──');
+  const r9 = await req('POST', '/api/tickets/verify', { ticketId: t2Id, qrToken: t2QrToken }, null);
+  assert('Status 401', r9.status === 401, r9.status);
+
+  console.log('\n── Test 10: Fake ticketId → 404 ──');
+  const r10 = await req('POST', '/api/tickets/verify', { ticketId: 'TKT-FAKE', qrToken: 'any' }, orgToken);
+  assert('Status 404', r10.status === 404, r10.status);
+
+  console.log('\n── Test 11: Unpaid ticket → rejected ──');
+  const r11 = await req('POST', '/api/tickets/verify', { ticketId: t3Id, qrToken: t3QrToken }, orgToken);
+  assert('Status 400', r11.status === 400, r11.status);
+  assert('Message includes pending', r11.body.message.includes('pending'), r11.body.message);
+
+  console.log('\n── Test 12: Event schema has correct entryPolicy ──');
+  assert('Single event has entryPolicy=single', singleEventRes.body.entryPolicy === 'single');
+  assert('Multi event has entryPolicy=multiple', multiEventRes.body.entryPolicy === 'multiple');
+  assert('Single event has eventTemplate=concert', singleEventRes.body.eventTemplate === 'concert');
+  assert('Multi event has eventTemplate=mela', multiEventRes.body.eventTemplate === 'mela');
 
   console.log('\n═══════════════════════════════════════════════════════════');
   const total = passed + failed;

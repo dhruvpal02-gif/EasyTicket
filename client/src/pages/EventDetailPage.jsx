@@ -33,11 +33,6 @@ const EventDetailPage = () => {
   }, [id]);
 
   const handleBook = (ticketTypeId) => {
-    if (!user) {
-      // Redirect to login, then back to this event page
-      navigate('/login', { state: { from: location } });
-      return;
-    }
     navigate(`/book/${id}?typeId=${ticketTypeId}`);
   };
 
