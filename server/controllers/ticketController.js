@@ -69,10 +69,18 @@ export const createTicket = [
       const totalAmount = tType.price * qty;
 
       // 6. Create the ticket record
+      const isOrganizer = req.user && req.user.role === 'organizer';
+      if (isOrganizer) {
+        return res.status(403).json({ message: 'Organizers cannot book tickets.' });
+      }
+
+      const guestToken = req.user ? undefined : crypto.randomBytes(32).toString('hex');
+
       const ticket = await Ticket.create({
         ticketId: generateTicketId(),
         event: eventId,
-        customer: req.user._id,
+        customer: req.user ? req.user._id : undefined,
+        guestToken,
         ticketType: ticketTypeId,
         ticketTypeName: tType.name,
         quantity: qty,
@@ -81,12 +89,17 @@ export const createTicket = [
         attendeeName,
         attendeeEmail,
         attendeePhone,
-        attendeePhoto: req.file ? `/uploads/${req.file.filename}` : '',
+        attendeePhoto: req.file ? req.file.path : '', // Cloudinary secure_url
         status: 'pending',
         qrToken: generateQRToken(),
       });
 
-      return res.status(201).json(ticket);
+      const responseObj = ticket.toObject();
+      if (guestToken) {
+        responseObj.guestToken = guestToken; // Explicitly pass it down
+      }
+
+      return res.status(201).json(responseObj);
     } catch (error) {
       console.error('createTicket error:', error.message);
       return res.status(500).json({ message: 'Server error while booking ticket.' });
@@ -118,10 +131,20 @@ export const getTicketById = async (req, res) => {
     if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
 
     // Verify ownership or authorization
-    const isCustomer = req.user.role === 'customer' && ticket.customer._id.toString() === req.user._id.toString();
-    const isOrganizer = req.user.role === 'organizer' && ticket.event.organizer.toString() === req.user._id.toString();
+    const guestToken = req.headers['x-guest-token'] || req.query.guestToken;
+    let authorized = false;
 
-    if (!isCustomer && !isOrganizer) {
+    if (req.user) {
+      const isCustomer = req.user.role === 'customer' && ticket.customer && ticket.customer._id.toString() === req.user._id.toString();
+      const isOrganizer = req.user.role === 'organizer' && ticket.event.organizer.toString() === req.user._id.toString();
+      if (isCustomer || isOrganizer) authorized = true;
+    }
+
+    if (!req.user && ticket.guestToken && ticket.guestToken === guestToken) {
+      authorized = true;
+    }
+
+    if (!authorized) {
       return res.status(403).json({ message: 'Unauthorized to view this ticket.' });
     }
 
@@ -183,7 +206,13 @@ export const processPayment = async (req, res) => {
     if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
 
     // Verify ownership
-    if (ticket.customer.toString() !== req.user._id.toString()) {
+    const guestToken = req.headers['x-guest-token'] || req.query.guestToken;
+    let authorized = false;
+
+    if (req.user && ticket.customer && ticket.customer.toString() === req.user._id.toString()) authorized = true;
+    if (!req.user && ticket.guestToken && ticket.guestToken === guestToken) authorized = true;
+
+    if (!authorized) {
       return res.status(403).json({ message: 'Unauthorized. You can only pay for your own tickets.' });
     }
 
@@ -216,7 +245,13 @@ export const failPayment = async (req, res) => {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found.' });
 
-    if (ticket.customer.toString() !== req.user._id.toString()) {
+    const guestToken = req.headers['x-guest-token'] || req.query.guestToken;
+    let authorized = false;
+
+    if (req.user && ticket.customer && ticket.customer.toString() === req.user._id.toString()) authorized = true;
+    if (!req.user && ticket.guestToken && ticket.guestToken === guestToken) authorized = true;
+
+    if (!authorized) {
       return res.status(403).json({ message: 'Unauthorized.' });
     }
 
@@ -266,9 +301,35 @@ export const verifyTicket = async (req, res) => {
       });
     }
 
-    // 4. Return Safe Verification Data (No QR token, no internal secrets)
+    // 4. Entry Policy Check
+    const entryPolicy = ticket.event.entryPolicy || 'single';
+
+    if (entryPolicy === 'single') {
+      // ── Single Entry ────────────────────────────────────────────────────
+      if (ticket.isScanned) {
+        return res.status(400).json({
+          message: 'Ticket already used.',
+          error: 'Ticket Already Used',
+          scannedAt: ticket.scannedAt,
+        });
+      }
+
+      ticket.isScanned = true;
+      ticket.scannedAt = new Date();
+      ticket.scanHistory.push(ticket.scannedAt);
+      await ticket.save();
+    } else {
+      // ── Multiple Entry (mela, zoo, etc.) ────────────────────────────────
+      const now = new Date();
+      ticket.scanHistory.push(now);
+      await ticket.save();
+    }
+
+    // 5. Return Safe Verification Data (includes attendeePhoto + scan info)
     return res.json({
       valid: true,
+      entryPolicy,
+      scanCount: ticket.scanHistory.length,
       ticket: {
         ticketId: ticket.ticketId,
         event: {
@@ -281,8 +342,11 @@ export const verifyTicket = async (req, res) => {
         ticketTypeName: ticket.ticketTypeName,
         quantity: ticket.quantity,
         attendeeName: ticket.attendeeName,
+        attendeePhoto: ticket.attendeePhoto,
         paymentStatus: ticket.paymentStatus,
         status: ticket.status,
+        isScanned: ticket.isScanned,
+        scannedAt: ticket.scannedAt,
       },
     });
   } catch (error) {

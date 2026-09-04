@@ -16,7 +16,10 @@ const ticketSchema = new mongoose.Schema(
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Made optional for guest bookings
+    },
+    guestToken: {
+      type: String,
     },
     ticketType: {
       type: mongoose.Schema.Types.ObjectId,
@@ -86,6 +89,17 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
+    },
+    isScanned: {
+      type: Boolean,
+      default: false,
+    },
+    scannedAt: {
+      type: Date,
+    },
+    scanHistory: {
+      type: [Date],
+      default: [],
     },
   },
   { timestamps: true }

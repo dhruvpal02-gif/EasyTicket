@@ -80,6 +80,16 @@ const eventSchema = new mongoose.Schema(
         message: 'At least one ticket type is required',
       },
     },
+    eventTemplate: {
+      type: String,
+      enum: ['mela', 'zoo', 'concert', 'custom'],
+      default: 'custom',
+    },
+    entryPolicy: {
+      type: String,
+      enum: ['single', 'multiple'],
+      default: 'single',
+    },
     isPublished: {
       type: Boolean,
       default: false,

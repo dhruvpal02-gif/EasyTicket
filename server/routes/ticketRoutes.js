@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, requireRole } from '../middleware/authMiddleware.js';
+import { protect, optionalAuth, requireRole } from '../middleware/authMiddleware.js';
 import {
   createTicket,
   getMyTickets,
@@ -12,13 +12,13 @@ import {
 
 const router = express.Router();
 
-// ── Customer Routes ───────────────────────────────────────────────────────────
+// ── Customer & Guest Routes ───────────────────────────────────────────────────
 // /my-tickets MUST come before /:id to prevent Express from treating 'my-tickets' as an ID
 router.get('/my-tickets', protect, requireRole('customer'), getMyTickets);
-router.post('/', protect, requireRole('customer'), ...createTicket);
-router.get('/:id', protect, requireRole('customer', 'organizer'), getTicketById);
-router.post('/:id/pay', protect, requireRole('customer'), processPayment);
-router.post('/:id/fail', protect, requireRole('customer'), failPayment);
+router.post('/', optionalAuth, ...createTicket);
+router.get('/:id', optionalAuth, getTicketById);
+router.post('/:id/pay', optionalAuth, processPayment);
+router.post('/:id/fail', optionalAuth, failPayment);
 
 // ── Organizer Routes ──────────────────────────────────────────────────────────
 router.post('/verify', protect, requireRole('organizer'), verifyTicket);

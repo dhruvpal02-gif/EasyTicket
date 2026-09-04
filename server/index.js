@@ -18,9 +18,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files (event images, customer photos) as static assets
-app.use('/uploads', express.static('uploads'));
-
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/auth',   authRoutes);
 app.use('/api/events', eventRoutes);

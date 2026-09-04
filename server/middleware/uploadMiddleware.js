@@ -1,19 +1,11 @@
 import multer from 'multer';
 import path from 'path';
+import { storage } from '../config/cloudinary.js';
 
-// Store uploaded files on disk under server/uploads/
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, 'uploads/'),
-  filename: (_req, file, cb) => {
-    // Unique filename: timestamp + random suffix + original extension
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, unique + path.extname(file.originalname).toLowerCase());
-  },
-});
-
+// ── Shared File Filter ────────────────────────────────────────────────────────
 const imageFilter = (_req, file, cb) => {
   const allowed = /jpeg|jpg|png|webp/;
-  const extOk  = allowed.test(path.extname(file.originalname).toLowerCase());
+  const extOk = allowed.test(path.extname(file.originalname).toLowerCase());
   const mimeOk = allowed.test(file.mimetype);
   if (extOk && mimeOk) {
     cb(null, true);
@@ -22,17 +14,16 @@ const imageFilter = (_req, file, cb) => {
   }
 };
 
-// ── eventImageUpload ──────────────────────────────────────────────────────────
-// Used on the event creation and update routes.
-// Field name must be "image" in the multipart form.
+// ── Exported Multer Instances (Cloudinary-backed) ─────────────────────────────
+
+// eventImageUpload — used on event creation and update routes (field: "image")
 export const eventImageUpload = multer({
   storage,
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
 });
 
-// ── customerPhotoUpload ───────────────────────────────────────────────────────
-// Placeholder for Phase 3 (ticket purchase + photo verification).
+// customerPhotoUpload — used on ticket booking (field: "attendeePhoto")
 export const customerPhotoUpload = multer({
   storage,
   fileFilter: imageFilter,

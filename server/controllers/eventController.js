@@ -26,9 +26,9 @@ const parseTicketTypes = (raw) => {
   return raw;
 };
 
-/** Build the image value: prefer an uploaded file, then a URL field, then keep existing. */
+/** Build the image value: prefer an uploaded file (Cloudinary URL), then a pasted URL, then keep existing. */
 const resolveImage = (req, existing = '') => {
-  if (req.file) return `/uploads/${req.file.filename}`;
+  if (req.file) return req.file.path; // Cloudinary secure_url
   if (req.body.imageUrl) return req.body.imageUrl.trim();
   return existing;
 };
@@ -38,7 +38,7 @@ export const createEvent = [
   runUploadIfMultipart,
   async (req, res) => {
     try {
-      const { title, description, date, time, venue, city } = req.body;
+      const { title, description, date, time, venue, city, eventTemplate, entryPolicy } = req.body;
 
       if (!title || !description || !date || !time || !venue || !city) {
         return res.status(400).json({ message: 'All event fields are required.' });
@@ -66,6 +66,8 @@ export const createEvent = [
         // Always take organizer from the verified JWT — never from the request body
         organizer: req.user._id,
         ticketTypes,
+        eventTemplate: eventTemplate || 'custom',
+        entryPolicy: entryPolicy || 'single',
       });
 
       return res.status(201).json(event);
@@ -138,7 +140,7 @@ export const updateEvent = [
         return res.status(403).json({ message: 'You are not the owner of this event.' });
       }
 
-      const { title, description, date, time, venue, city } = req.body;
+      const { title, description, date, time, venue, city, eventTemplate, entryPolicy } = req.body;
 
       if (title)       event.title       = title;
       if (description) event.description = description;
@@ -146,6 +148,8 @@ export const updateEvent = [
       if (time)        event.time        = time;
       if (venue)       event.venue       = venue;
       if (city)        event.city        = city;
+      if (eventTemplate) event.eventTemplate = eventTemplate;
+      if (entryPolicy)   event.entryPolicy   = entryPolicy;
 
       const imageResolved = resolveImage(req, event.image);
       event.image = imageResolved;
@@ -236,8 +240,9 @@ export const getEventQr = async (req, res) => {
     }
 
     // Generate public event URL
-    // Depending on frontend hosting, the domain could be an env variable. Using standard localhost:5173 for local MVP.
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    // Pulls from FRONTEND_URL in production, otherwise defaults to local dev port
+    const rawFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = rawFrontendUrl.replace(/\/$/, ''); // safe stripping of trailing slashes
     const eventPublicUrl = `${frontendUrl}/events/${event._id}`;
 
     const qrDataUri = await QRCode.toDataURL(eventPublicUrl, { width: 300, margin: 2 });
