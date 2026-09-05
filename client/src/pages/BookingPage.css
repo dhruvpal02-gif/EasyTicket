@@ -31,13 +31,14 @@
 }
 
 .qty-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   font-size: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
 }
 
 .qty-display {
@@ -104,13 +105,14 @@
 
 .booking-submit-btn {
   font-size: 1.05rem;
-  padding: 0.8rem;
+  padding: 1rem; /* Better tap target */
+  min-height: 48px;
 }
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .booking-layout {
-    flex-direction: column-reverse; /* Put summary on top on mobile */
+    flex-direction: column; /* Normal flow, form then summary */
     gap: 1.5rem;
   }
 

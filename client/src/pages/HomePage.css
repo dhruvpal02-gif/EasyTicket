@@ -1,46 +1,120 @@
-.home-hero {
-  text-align: center;
-  padding: 2.5rem 1rem 2rem;
+
+.home-container {
+  display: flex;
+  flex-direction: column;
 }
 
-.home-hero h1 {
-  font-size: 2rem;
+/* Hero Section */
+.b2b-hero {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  color: #fff;
+  padding: 5rem 2rem;
+  text-align: center;
+}
+
+.b2b-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.b2b-hero h1 {
+  font-size: 2.5rem;
   font-weight: 800;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.b2b-hero p {
+  font-size: 1.2rem;
+  margin-bottom: 2.5rem;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.b2b-hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-large {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.b2b-hero-actions .btn-outline {
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+.b2b-hero-actions .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #fff;
+}
+
+/* Event Types Section */
+.b2b-event-types {
+  padding: 5rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.b2b-event-types h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
   color: #111827;
 }
 
-.home-hero p {
+.section-subtitle {
   color: #6b7280;
-  margin-top: 0.4rem;
-  font-size: 1rem;
+  margin-bottom: 3rem;
+  font-size: 1.1rem;
 }
 
-.home-search {
-  margin-top: 1.25rem;
-  width: 100%;
-  max-width: 480px;
-  padding: 0.65rem 1rem;
-  border: 1.5px solid #d1d5db;
-  border-radius: 9999px;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.home-search:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-.home-status {
-  text-align: center;
-  color: #6b7280;
-  margin-top: 2rem;
-}
-
-.events-grid {
+.event-type-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.25rem;
-  margin-top: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.event-type-card {
+  background: #ffffff;
+  padding: 2.5rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.event-type-card:hover {
+  transform: translateY(-5px);
+}
+
+.event-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.event-type-card h3 {
+  font-size: 1.25rem;
+  color: #111827;
+  margin-bottom: 1rem;
+}
+
+.event-type-card p {
+  color: #4b5563;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .b2b-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .b2b-hero {
+    padding: 3rem 1.5rem;
+  }
 }

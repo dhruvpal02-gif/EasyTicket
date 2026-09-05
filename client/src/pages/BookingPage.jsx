@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
-import useAuth from '../hooks/useAuth';
 import './BookingPage.css';
 
 const BookingPage = () => {
@@ -9,7 +8,6 @@ const BookingPage = () => {
   const [searchParams] = useSearchParams();
   const ticketTypeId = searchParams.get('typeId');
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [event, setEvent] = useState(null);
   const [ticketType, setTicketType] = useState(null);
@@ -20,19 +18,13 @@ const BookingPage = () => {
   // Form State
   const [qty, setQty] = useState(1);
   const [form, setForm] = useState({
-    attendeeName: user?.name || '',
-    attendeeEmail: user?.email || '',
-    attendeePhone: '',
+    attendeeName: '',
+    whatsappNumber: '',
   });
-  const [photo, setPhoto] = useState(null);
 
   useEffect(() => {
-    // If no ticket type selected, back to event
     if (!ticketTypeId) return navigate(`/events/${eventId}`);
     
-    // Organizers cannot book tickets
-    if (user?.role === 'organizer') return navigate(`/events/${eventId}`);
-
     const fetchEvent = async () => {
       try {
         const { data } = await api.get(`/api/events/${eventId}`);
@@ -50,20 +42,20 @@ const BookingPage = () => {
       }
     };
     fetchEvent();
-  }, [eventId, ticketTypeId, navigate, user]);
+  }, [eventId, ticketTypeId, navigate]);
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  
-  const handlePhotoChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setPhoto(e.target.files[0]);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (qty < 1) return setError('Quantity must be at least 1.');
+    if (qty < 1) return setError('Number of members must be at least 1.');
     if (qty > (ticketType.quantity - ticketType.sold)) return setError('Not enough tickets available.');
+    
+    // Strict 10-digit validation
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(form.whatsappNumber)) {
+      return setError('Please enter a valid 10-digit WhatsApp number.');
+    }
     
     setBookingLoading(true);
     setError('');
@@ -74,9 +66,7 @@ const BookingPage = () => {
       formData.append('ticketTypeId', ticketTypeId);
       formData.append('quantity', qty);
       formData.append('attendeeName', form.attendeeName);
-      formData.append('attendeeEmail', form.attendeeEmail);
-      formData.append('attendeePhone', form.attendeePhone);
-      if (photo) formData.append('attendeePhoto', photo);
+      formData.append('attendeePhone', form.whatsappNumber);
 
       const { data } = await api.post('/api/tickets', formData);
       // Redirect to payment flow
@@ -103,7 +93,7 @@ const BookingPage = () => {
     <div className="page-container booking-container">
       <div className="booking-header">
         <Link to={`/events/${eventId}`} className="back-link">← Back to Event</Link>
-        <h1>Checkout</h1>
+        <h1>Guest Checkout</h1>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -113,35 +103,27 @@ const BookingPage = () => {
         <div className="booking-form-wrap">
           <form onSubmit={handleSubmit} className="booking-form" noValidate>
             <section className="form-section">
-              <h2>1. Select Quantity</h2>
+              <h2>1. Number of Members</h2>
               <div className="form-group qty-group">
-                <label>How many tickets?</label>
+                <label>How many people are attending?</label>
                 <div className="qty-controls">
                   <button type="button" className="btn btn-outline qty-btn" onClick={() => setQty(Math.max(1, qty - 1))} disabled={qty <= 1}>-</button>
                   <span className="qty-display">{qty}</span>
                   <button type="button" className="btn btn-outline qty-btn" onClick={() => setQty(Math.min(available, qty + 1))} disabled={qty >= available}>+</button>
                 </div>
-                <small className="help-text">{available} tickets available</small>
+                <small className="help-text">{available} slots available</small>
               </div>
             </section>
 
             <section className="form-section">
-              <h2>2. Attendee Details</h2>
+              <h2>2. Contact Details</h2>
               <div className="form-group">
                 <label htmlFor="attendeeName">Full Name</label>
-                <input type="text" id="attendeeName" name="attendeeName" value={form.attendeeName} onChange={handleChange} required />
+                <input type="text" id="attendeeName" name="attendeeName" value={form.attendeeName} onChange={handleChange} placeholder="e.g. Rahul Kumar" required />
               </div>
               <div className="form-group">
-                <label htmlFor="attendeeEmail">Email</label>
-                <input type="email" id="attendeeEmail" name="attendeeEmail" value={form.attendeeEmail} onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="attendeePhone">Phone Number</label>
-                <input type="tel" id="attendeePhone" name="attendeePhone" value={form.attendeePhone} onChange={handleChange} placeholder="e.g. +91 9876543210" required />
-              </div>
-              <div className="form-group">
-                <label htmlFor="attendeePhoto">Photo ID (Optional for MVP)</label>
-                <input type="file" id="attendeePhoto" accept="image/*" onChange={handlePhotoChange} className="file-input" />
+                <label htmlFor="whatsappNumber">WhatsApp Number (10 digits)</label>
+                <input type="tel" id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleChange} placeholder="9876543210" pattern="\d{10}" maxLength="10" required />
               </div>
             </section>
           </form>
@@ -161,8 +143,8 @@ const BookingPage = () => {
             </div>
           </div>
           <div className="summary-total">
-            <span>Total</span>
-            <span>₹{totalAmount}</span>
+            <span>Total Price</span>
+            <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>₹{totalAmount}</span>
           </div>
           <button 
             type="button" 
@@ -170,11 +152,8 @@ const BookingPage = () => {
             onClick={handleSubmit} 
             disabled={bookingLoading}
           >
-            {bookingLoading ? 'Processing...' : 'Proceed to Payment'}
+            {bookingLoading ? 'Processing...' : 'Pay Now'}
           </button>
-          <small className="help-text" style={{ textAlign: 'center', marginTop: '0.5rem', display: 'block' }}>
-            Payments are simulated for this phase.
-          </small>
         </div>
       </div>
     </div>

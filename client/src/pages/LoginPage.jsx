@@ -12,7 +12,7 @@ const LoginPage = () => {
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = location.state?.from?.pathname || '/';
+  const redirectTo = location.state?.from?.pathname || '/dashboard';
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -45,8 +45,8 @@ const LoginPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-subtitle">Log in to your EasyTicket account</p>
+        <h1 className="auth-title">Organizer Login</h1>
+        <p className="auth-subtitle">Manage your EasyTicket events</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 

@@ -12,7 +12,6 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'customer',
   });
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +29,6 @@ const RegisterPage = () => {
     if (!form.password)               return 'Password is required.';
     if (form.password.length < 6)     return 'Password must be at least 6 characters.';
     if (form.password !== form.confirmPassword) return 'Passwords do not match.';
-    if (!['customer', 'organizer'].includes(form.role)) return 'Select a valid role.';
     return null;
   };
 
@@ -41,8 +39,8 @@ const RegisterPage = () => {
 
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.role);
-      navigate('/', { replace: true });
+      await register(form.name, form.email, form.password, 'organizer');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
@@ -53,20 +51,20 @@ const RegisterPage = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1 className="auth-title">Create an account</h1>
-        <p className="auth-subtitle">Join EasyTicket today</p>
+        <h1 className="auth-title">Organizer Registration</h1>
+        <p className="auth-subtitle">Create a business account</p>
 
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">Organizer Name</label>
             <input
               id="name"
               name="name"
               type="text"
               autoComplete="name"
-              placeholder="Jane Doe"
+              placeholder="Acme Events Ltd"
               value={form.name}
               onChange={handleChange}
               disabled={loading}
@@ -74,7 +72,7 @@ const RegisterPage = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Business Email</label>
             <input
               id="email"
               name="email"
@@ -113,28 +111,6 @@ const RegisterPage = () => {
               onChange={handleChange}
               disabled={loading}
             />
-          </div>
-
-          <div className="form-group">
-            <label>I am a…</label>
-            <div className="role-selector">
-              {['customer', 'organizer'].map((r) => (
-                <label
-                  key={r}
-                  className={`role-option ${form.role === r ? 'selected' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={r}
-                    checked={form.role === r}
-                    onChange={handleChange}
-                    disabled={loading}
-                  />
-                  {r === 'customer' ? '🎫 Customer' : '🎪 Organizer'}
-                </label>
-              ))}
-            </div>
           </div>
 
           <button type="submit" className="btn btn-primary btn-full" disabled={loading}>

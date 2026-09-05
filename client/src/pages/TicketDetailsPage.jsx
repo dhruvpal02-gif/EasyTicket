@@ -84,82 +84,90 @@ const TicketDetailsPage = () => {
         )}
       </div>
       
-      <div className="ticket-paper" ref={ticketRef}>
-        <div className="ticket-top">
-          <div className="ticket-branding">EasyTicket</div>
-          <div className={`ticket-status-badge status-${ticket.status}`}>{ticket.status}</div>
-        </div>
-
-        {ticket.event.image && (
-          <div className="ticket-hero-img">
-            <img src={getImageUrl(ticket.event.image)} alt={ticket.event.title} crossOrigin="anonymous" />
+      <div className="premium-ticket-card" ref={ticketRef}>
+        {/* TOP SECTION */}
+        <div className="ticket-top-section">
+          <div className="ticket-header">
+            <h1 className="ticket-event-title">{ticket.event.title}</h1>
+            <div className={`ticket-status-badge status-${ticket.status}`}>{ticket.status}</div>
           </div>
-        )}
 
-        <div className="ticket-body">
-          <h1 className="ticket-event-title">{ticket.event.title}</h1>
-          <div className="ticket-meta-grid">
-            <div className="meta-item">
-              <span className="meta-label">Date & Time</span>
-              <span className="meta-value">{fmtDate(ticket.event.date)}<br/>{ticket.event.time}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Venue</span>
-              <span className="meta-value">{ticket.event.venue}<br/>{ticket.event.city}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="ticket-tear-line"></div>
-
-        <div className="ticket-details-section">
-          <div className="ticket-meta-grid">
-            <div className="meta-item">
-              <span className="meta-label">Ticket Type</span>
-              <span className="meta-value">{ticket.ticketTypeName}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Quantity</span>
-              <span className="meta-value">{ticket.quantity}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Attendee Name</span>
-              <span className="meta-value">{ticket.attendeeName}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Ticket ID</span>
-              <span className="meta-value" style={{ fontFamily: 'monospace' }}>{ticket.ticketId}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Total Amount</span>
-              <span className="meta-value" style={{ color: '#4f46e5', fontWeight: '800' }}>₹{ticket.totalAmount}</span>
-            </div>
-            <div className="meta-item">
-              <span className="meta-label">Payment Status</span>
-              <span className="meta-value" style={{ textTransform: 'capitalize' }}>
-                {ticket.paymentStatus}
-              </span>
-            </div>
-            {ticket.paymentId && (
-              <div className="meta-item">
-                <span className="meta-label">Payment ID</span>
-                <span className="meta-value" style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{ticket.paymentId}</span>
+          <div className="ticket-top-grid">
+            <div className="grid-item grid-item-full">
+              <span className="ticket-label">VISITOR</span>
+              <div className="visitor-box">
+                <img 
+                  src={ticket.attendeePhoto ? getImageUrl(ticket.attendeePhoto) : `https://ui-avatars.com/api/?name=${encodeURIComponent(ticket.attendeeName)}&background=f3f4f6&color=4f46e5`} 
+                  alt={ticket.attendeeName} 
+                  className="visitor-avatar" 
+                  crossOrigin="anonymous" 
+                />
+                <span className="visitor-name">{ticket.attendeeName}</span>
               </div>
-            )}
+            </div>
+
+            <div className="grid-item">
+              <span className="ticket-label">DATE</span>
+              <span className="ticket-value">{fmtDate(ticket.event.date)}</span>
+            </div>
+            
+            <div className="grid-item">
+              <span className="ticket-label">TIME SLOT</span>
+              <span className="ticket-value">{ticket.event.time}</span>
+            </div>
+
+            <div className="grid-item">
+              <span className="ticket-label">LOCATION</span>
+              <span className="ticket-value">{ticket.event.city}</span>
+            </div>
+            
+            <div className="grid-item">
+              <span className="ticket-label">ORGANIZER</span>
+              <span className="ticket-value">{ticket.event.organizerName || 'EasyTicket Partner'}</span>
+            </div>
+
+            <div className="grid-item">
+              <span className="ticket-label">BOOKING ID</span>
+              <span className="ticket-value" style={{ fontFamily: 'monospace' }}>{ticket.ticketId}</span>
+            </div>
+
+            <div className="grid-item">
+              <span className="ticket-label">AMOUNT</span>
+              <span className="ticket-value">₹{ticket.totalAmount} ({ticket.paymentStatus})</span>
+            </div>
           </div>
         </div>
 
-        {/* QR Code Section */}
-        {ticket.status === 'confirmed' && ticket.qrCodeDataUri ? (
-          <>
-            <div className="ticket-tear-line"></div>
-            <div className="ticket-qr-section">
-              <p className="meta-label" style={{ textAlign: 'center', marginBottom: '1rem' }}>Scan at Entry</p>
-              <img src={ticket.qrCodeDataUri} alt="Entry QR Code" className="qr-image" />
-              <p className="qr-hint">Keep this QR code private</p>
+        {/* PERFORATED DIVIDER */}
+        <div className="ticket-divider"></div>
+
+        {/* BOTTOM SECTION */}
+        <div className="ticket-bottom-section">
+          <div className="bottom-left-grid">
+            <div className="grid-item grid-item-full">
+              <span className="ticket-label">📍 VENUE</span>
+              <span className="ticket-value">{ticket.event.venue}</span>
             </div>
-          </>
-        ) : null}
+            <div className="grid-item">
+              <span className="ticket-label">VALID UNTIL</span>
+              <span className="ticket-value">Event End</span>
+            </div>
+            <div className="grid-item">
+              <span className="ticket-label">CATEGORY</span>
+              <span className="ticket-value">{ticket.ticketTypeName}</span>
+            </div>
+            <div className="grid-item">
+              <span className="ticket-label">PAX</span>
+              <span className="ticket-value">{ticket.quantity} Member{ticket.quantity > 1 ? 's' : ''}</span>
+            </div>
+          </div>
+          
+          {ticket.status === 'confirmed' && ticket.qrCodeDataUri && (
+            <div className="qr-box">
+              <img src={ticket.qrCodeDataUri} alt="Entry QR Code" />
+            </div>
+          )}
+        </div>
 
         <div className="ticket-footer no-print">
           {ticket.paymentStatus === 'pending' || ticket.paymentStatus === 'failed' ? (
@@ -169,7 +177,6 @@ const TicketDetailsPage = () => {
             </div>
           ) : (
             <div className="ticket-footer-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <p>Please present this digital ticket at the venue.</p>
               <button 
                 className="btn btn-primary" 
                 style={{ width: '100%', marginTop: '1rem', padding: '1rem', fontSize: '1.1rem', fontWeight: '700', background: '#10b981', borderColor: '#10b981' }}
@@ -177,6 +184,16 @@ const TicketDetailsPage = () => {
                 disabled={downloading}
               >
                 {downloading ? 'Generating Image...' : '📥 Download Ticket to Phone'}
+              </button>
+              <button 
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '1rem', fontSize: '1.1rem', fontWeight: '700', background: '#25D366', borderColor: '#25D366' }}
+                onClick={() => {
+                  const ticketUrl = window.location.href;
+                  window.open(`https://wa.me/91${ticket.attendeePhone}?text=Here%20is%20your%20ticket%20link:%20${encodeURIComponent(ticketUrl)}`, '_blank');
+                }}
+              >
+                💬 Send Ticket via WhatsApp
               </button>
             </div>
           )}
