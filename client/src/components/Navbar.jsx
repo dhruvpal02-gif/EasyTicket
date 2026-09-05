@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import './Navbar.css';
 
@@ -43,14 +43,14 @@ const Navbar = () => {
               </div>
               
               {user.role === 'customer' && (
-                <Link to="/my-tickets" className="nav-link" onClick={closeMenu}>My Tickets</Link>
+                <NavLink to="/my-tickets" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>My Tickets</NavLink>
               )}
               
               {user.role === 'organizer' && (
                 <>
-                  <Link to="/dashboard" className="nav-link" onClick={closeMenu}>Dashboard</Link>
-                  <Link to="/events/create" className="nav-link" onClick={closeMenu}>Create Event</Link>
-                  <Link to="/verify-ticket" className="nav-link" onClick={closeMenu}>Scan Tickets</Link>
+                  <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>Dashboard</NavLink>
+                  <NavLink to="/events/create" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>Create Event</NavLink>
+                  <NavLink to="/verify-ticket" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>Scan Tickets</NavLink>
                 </>
               )}
               

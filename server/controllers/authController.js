@@ -1,5 +1,28 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
+import nodemailer from 'nodemailer';
+
+// ── OTP In-Memory Store ───────────────────────────────────────────────────────
+const otpStore = new Map();
+
+// Clean up expired OTPs periodically (every 10 mins)
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, data] of otpStore.entries()) {
+    if (now > data.expiresAt) otpStore.delete(email);
+  }
+}, 10 * 60 * 1000);
+
+let transporter;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -13,25 +36,88 @@ const safeUser = (user) => ({
   payoutDetails: user.payoutDetails,
 });
 
+// ── POST /api/auth/send-otp ───────────────────────────────────────────────────
+
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists
+    const existing = await User.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({ message: 'An account with this email already exists.' });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Save to store
+    otpStore.set(normalizedEmail, {
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+    });
+
+    if (transporter) {
+      await transporter.sendMail({
+        from: `"EasyTicket Admin" <${process.env.EMAIL_USER}>`,
+        to: normalizedEmail,
+        subject: 'EasyTicket Organizer Registration - OTP Verification',
+        text: `Your OTP for EasyTicket registration is: ${otp}. It will expire in 5 minutes.`,
+        html: `<h3>Welcome to EasyTicket!</h3><p>Your OTP for registration is: <strong style="font-size: 1.2rem;">${otp}</strong></p><p>It will expire in 5 minutes.</p>`,
+      });
+    } else {
+      console.warn(`[OTP] Email not configured! Mock OTP for ${normalizedEmail} is ${otp}`);
+    }
+
+    return res.status(200).json({ message: 'OTP sent successfully.' });
+  } catch (error) {
+    console.error('sendOtp error:', error.message);
+    return res.status(500).json({ message: 'Server error sending OTP.' });
+  }
+};
+
 // ── POST /api/auth/register ───────────────────────────────────────────────────
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, otp } = req.body;
 
     // Basic presence validation
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    if (!name || !email || !password || !role || !otp) {
+      return res.status(400).json({ message: 'All fields, including OTP, are required.' });
     }
 
-    // Check for duplicate email
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // OTP Validation
+    const storedOtpData = otpStore.get(normalizedEmail);
+    if (!storedOtpData) {
+      return res.status(400).json({ message: 'No OTP found for this email. Please request a new one.' });
+    }
+    
+    if (Date.now() > storedOtpData.expiresAt) {
+      otpStore.delete(normalizedEmail);
+      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
+    }
+    
+    if (storedOtpData.otp !== otp) {
+      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
+    }
+    
+    // Check for duplicate email again just in case
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(409).json({ message: 'An account with this email already exists.' });
     }
 
     // Create user — password hashing happens in the pre-save hook on User model
-    const user = await User.create({ name, email, password, role });
+    const user = await User.create({ name, email: normalizedEmail, password, role });
+
+    // Cleanup OTP
+    otpStore.delete(normalizedEmail);
 
     return res.status(201).json({
       user: safeUser(user),

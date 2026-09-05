@@ -57,11 +57,20 @@
   font-weight: 500;
   color: #374151;
   text-decoration: none;
-  transition: color 0.15s;
+  transition: all 0.15s ease;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid transparent;
 }
 
 .nav-link:hover {
   color: #4f46e5;
+}
+
+/* Active State */
+.nav-link.active {
+  color: #4f46e5;
+  font-weight: 600;
+  border-bottom: 2px solid #4f46e5;
 }
 
 /* Hamburger Menu Base */
@@ -144,6 +153,14 @@
     border-bottom: 1px solid #f3f4f6;
     text-align: left;
     width: 100%;
+  }
+
+  .nav-link.active {
+    color: #4f46e5;
+    background: #eef2ff; /* subtle indigo background */
+    border-bottom: 1px solid #f3f4f6; /* keep separator consistent */
+    border-left: 4px solid #4f46e5; /* Side indicator instead of bottom */
+    padding-left: calc(1.5rem - 4px); /* adjust padding to maintain text alignment */
   }
   
   .btn-primary {

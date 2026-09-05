@@ -1,10 +1,11 @@
 import express from 'express';
-import { register, login, updatePayoutDetails } from '../controllers/authController.js';
+import { register, login, updatePayoutDetails, sendOtp } from '../controllers/authController.js';
 import { protect, requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Public routes
+router.post('/send-otp', sendOtp);
 router.post('/register', register);
 router.post('/login', login);
 
