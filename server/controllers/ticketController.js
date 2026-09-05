@@ -31,7 +31,7 @@ export const createTicket = [
       const qty = parseInt(quantity, 10);
 
       // 1. Basic validation
-      if (!eventId || !ticketTypeId || !qty || !attendeeName || !attendeeEmail || !attendeePhone) {
+      if (!eventId || !ticketTypeId || !qty || !attendeeName || !attendeePhone) {
         return res.status(400).json({ message: 'All booking fields are required.' });
       }
       if (qty <= 0) {

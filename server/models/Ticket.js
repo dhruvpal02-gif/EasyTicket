@@ -51,8 +51,8 @@ const ticketSchema = new mongoose.Schema(
     },
     attendeeEmail: {
       type: String,
-      required: true,
       trim: true,
+      default: '',
     },
     attendeePhone: {
       type: String,
