@@ -68,8 +68,7 @@ const PaymentPage = () => {
       
       // 2. Open Razorpay widget
       const options = {
-        key: 'rzp_test_YourMockKey', // Usually passed from backend, but Razorpay SDK works with any test key id here if it's mock
-        // Ideally we fetch this from environment but for testing UI we can use a string or process.env.VITE_RAZORPAY_KEY_ID
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YourMockKey',
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'EasyTicket',

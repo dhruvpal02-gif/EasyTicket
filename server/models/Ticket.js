@@ -75,7 +75,7 @@ const ticketSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['card', 'upi', 'netbanking', ''],
+      enum: ['card', 'upi', 'netbanking', 'razorpay', ''],
       default: '',
     },
     paymentId: {
