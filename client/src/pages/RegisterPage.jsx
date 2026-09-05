@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import api from '../services/api';
@@ -16,12 +16,25 @@ const RegisterPage = () => {
     confirmPassword: '',
     otp: '',
   });
-  const [error, setError]     = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [timer, setTimer] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
+
+  useEffect(() => {
+    let interval;
+    if (step === 2 && timer > 0) {
+      interval = setInterval(() => setTimer((t) => t - 1), 1000);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     setError('');
+    setSuccess('');
   };
 
   const validateStep1 = () => {
@@ -44,11 +57,28 @@ const RegisterPage = () => {
     try {
       await api.post('/api/auth/send-otp', { email: form.email });
       setStep(2);
+      setTimer(30); // Start 30s countdown
       setError('');
+      setSuccess('');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      await api.post('/api/auth/send-otp', { email: form.email });
+      setTimer(30);
+      setSuccess('A new OTP has been sent to your email.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend OTP. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -79,6 +109,7 @@ const RegisterPage = () => {
         </p>
 
         {error && <div className="alert alert-error">{error}</div>}
+        {success && <div className="alert alert-success">{success}</div>}
 
         {step === 1 && (
           <form onSubmit={handleSendOtp} noValidate>
@@ -168,13 +199,29 @@ const RegisterPage = () => {
               {loading ? 'Verifying...' : 'Create Account'}
             </button>
 
-            <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+            <div style={{ textAlign: 'center', marginTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {timer > 0 ? (
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>
+                  Didn't receive code? Resend in {timer}s
+                </p>
+              ) : (
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ padding: '0.25rem', fontSize: '0.9rem', border: 'none', background: 'transparent', color: '#4f46e5', fontWeight: '600' }}
+                  onClick={handleResendOtp}
+                  disabled={resendLoading || loading}
+                >
+                  {resendLoading ? 'Sending...' : "Didn't receive code? Resend OTP"}
+                </button>
+              )}
+
               <button 
                 type="button" 
                 className="btn btn-outline" 
-                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', border: 'none', background: 'transparent', color: '#4f46e5' }}
+                style={{ padding: '0.25rem', fontSize: '0.9rem', border: 'none', background: 'transparent', color: '#6b7280' }}
                 onClick={() => setStep(1)}
-                disabled={loading}
+                disabled={loading || resendLoading}
               >
                 ← Back to Edit Details
               </button>
