@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import useAuth from './hooks/useAuth';
 import Navbar from './components/Navbar';
 import PrivateRoute from './components/PrivateRoute';
 import HomePage from './pages/HomePage';
@@ -14,6 +15,12 @@ import TicketDetailsPage from './pages/TicketDetailsPage';
 import VerifyTicketPage from './pages/VerifyTicketPage';
 
 function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null; // Or a minimal loading spinner if you prefer
+  }
+
   return (
     <BrowserRouter>
       <Navbar />
@@ -23,7 +30,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         
         {/* Home page is public now to browse events */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={user ? <Navigate to="/events/create" replace /> : <HomePage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
 
         {/* Guest OR Customer routes (handled within component) */}

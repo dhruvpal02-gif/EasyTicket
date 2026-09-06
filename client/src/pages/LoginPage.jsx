@@ -12,7 +12,7 @@ const LoginPage = () => {
   const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = location.state?.from?.pathname || '/dashboard';
+  const redirectTo = location.state?.from?.pathname || '/events/create';
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

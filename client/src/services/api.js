@@ -26,4 +26,27 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const message = error.response?.data?.message?.toLowerCase() || '';
+
+    // Auto-logout if token is invalid, expired, or user is deleted/not found
+    if (status === 401 || (status === 404 && message.includes('user'))) {
+      localStorage.removeItem('et_token');
+      localStorage.removeItem('et_user');
+      
+      // Auto-redirect to login if not already on public auth/home pages
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path !== '/login' && path !== '/register' && path !== '/') {
+          window.location.href = '/login';
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

@@ -19,20 +19,32 @@ export const AuthProvider = ({ children }) => {
 
   // On mount: restore session from localStorage and verify the token is still valid
   useEffect(() => {
-    const storedToken = localStorage.getItem('et_token');
-    const storedUser  = localStorage.getItem('et_user');
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('et_token');
+      const storedUser  = localStorage.getItem('et_user');
 
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      } catch {
-        // Corrupt stored data — clear it
-        localStorage.removeItem('et_token');
-        localStorage.removeItem('et_user');
+      if (storedToken && storedUser) {
+        try {
+          // Validate the token and fetch fresh user profile
+          const { data } = await api.get('/api/auth/me', {
+            headers: { Authorization: `Bearer ${storedToken}` }
+          });
+          
+          setToken(storedToken);
+          setUser(data.user);
+          localStorage.setItem('et_user', JSON.stringify(data.user));
+        } catch (error) {
+          // Token invalid, expired, or user deleted -> Clear local storage
+          localStorage.removeItem('et_token');
+          localStorage.removeItem('et_user');
+          setToken(null);
+          setUser(null);
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const persistSession = (userData, jwtToken) => {

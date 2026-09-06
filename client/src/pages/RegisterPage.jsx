@@ -92,7 +92,7 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, 'organizer', form.otp);
-      navigate('/dashboard', { replace: true });
+      navigate('/events/create', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Invalid OTP.');
     } finally {
