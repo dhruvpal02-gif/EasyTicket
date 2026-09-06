@@ -105,3 +105,33 @@
   color: #047857;
   border: 1px solid #34d399;
 }
+
+/* Password Toggle styles */
+.password-wrapper {
+  position: relative;
+  display: block;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: #4b5563;
+}
+
+.password-wrapper input {
+  padding-right: 40px; /* space for the icon */
+}
