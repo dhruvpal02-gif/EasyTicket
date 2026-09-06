@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import useAuth from '../hooks/useAuth';
 import './CreateEventPage.css';
 
 const CreateEventPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [step, setStep] = useState(1); // 1 = Template Selection, 2 = Form Details
 
@@ -29,6 +33,23 @@ const CreateEventPage = () => {
 
   const [eventTemplate, setEventTemplate] = useState('mela');
   const [entryPolicy, setEntryPolicy] = useState('multiple');
+
+  // Restore draft event from localStorage
+  useEffect(() => {
+    const draft = localStorage.getItem('draftEvent');
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.form) setForm(parsed.form);
+        if (parsed.ticketTypes) setTicketTypes(parsed.ticketTypes);
+        if (parsed.eventTemplate) setEventTemplate(parsed.eventTemplate);
+        if (parsed.entryPolicy) setEntryPolicy(parsed.entryPolicy);
+        if (parsed.step) setStep(parsed.step);
+      } catch (e) {
+        console.error("Failed to parse draft event", e);
+      }
+    }
+  }, []);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -104,6 +125,14 @@ const CreateEventPage = () => {
       return;
     }
 
+    // Require Auth to Publish
+    if (!user) {
+      const draft = { form, ticketTypes, eventTemplate, entryPolicy, step };
+      localStorage.setItem('draftEvent', JSON.stringify(draft));
+      setShowAuthModal(true);
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -117,7 +146,8 @@ const CreateEventPage = () => {
         formData.append('image', image);
       }
 
-      const { data } = await api.post('/api/events', formData);
+      await api.post('/api/events', formData);
+      localStorage.removeItem('draftEvent'); // Clear draft on success
       navigate('/dashboard');
     } catch (err) {
       const backendMessage = err.response?.data?.message;
@@ -343,6 +373,33 @@ const CreateEventPage = () => {
             </button>
           </div>
         </form>
+      )}
+
+      {/* Auth Modal for Unauthenticated Users */}
+      {showAuthModal && (
+        <div className="auth-modal-overlay">
+          <div className="auth-modal">
+            <h3>You are almost there!</h3>
+            <p>Please log in or sign up to publish your event. Your progress has been automatically saved.</p>
+            <div className="auth-modal-actions">
+              <button 
+                className="btn btn-outline" 
+                onClick={() => navigate('/login', { state: { from: { pathname: '/events/create' } } })}
+              >
+                Log In
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => navigate('/register', { state: { from: { pathname: '/events/create' } } })}
+              >
+                Sign Up
+              </button>
+            </div>
+            <button className="btn-close-modal" onClick={() => setShowAuthModal(false)}>
+              Keep editing
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

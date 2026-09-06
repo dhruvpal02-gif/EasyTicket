@@ -47,14 +47,7 @@ function App() {
             </PrivateRoute>
           }
         />
-        <Route
-          path="/events/create"
-          element={
-            <PrivateRoute>
-              <CreateEventPage />
-            </PrivateRoute>
-          }
-        />
+        <Route path="/events/create" element={<CreateEventPage />} />
         <Route
           path="/my-tickets"
           element={
