@@ -79,13 +79,19 @@ const CreateEventPage = () => {
   };
 
   const handleTemplateSelect = (template) => {
+    // 1. No authentication checks here. Any user can click a template.
+    // 2. Strictly set the template type and step 2 without preconditions.
     setEventTemplate(template);
+    
     if (template === 'mela' || template === 'zoo') {
       setEntryPolicy('multiple');
     } else if (template === 'concert') {
       setEntryPolicy('single');
+    } else {
+      setEntryPolicy('single'); // fallback for custom
     }
-    setStep(2); // Instantly move to step 2
+    
+    setStep(2); // Instantly transition to Form Details (Step 2)
     window.scrollTo(0, 0);
   };
 
