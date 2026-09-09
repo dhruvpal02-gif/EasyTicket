@@ -17,17 +17,16 @@ let transporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, // MUST be false for port 587 (uses STARTTLS)
+    requireTLS: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    // This strictly forces Node to resolve IPv4 addresses, bypassing the ENETUNREACH issue
     tls: {
       rejectUnauthorized: false
-    },
-    family: 4 
+    }
   });
 }
 
