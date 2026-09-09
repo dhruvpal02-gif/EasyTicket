@@ -18,7 +18,7 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // MUST be false for port 587 (uses STARTTLS)
+    secure: false, 
     requireTLS: true,
     auth: {
       user: process.env.EMAIL_USER,
@@ -26,7 +26,8 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     },
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    family: 4 // CRITICAL: Forces IPv4 to prevent Render timeout
   });
 }
 
