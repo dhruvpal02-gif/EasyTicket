@@ -21,6 +21,7 @@
     "nodemailer": "^10.0.0",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.8",
+    "resend": "^6.26.0",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

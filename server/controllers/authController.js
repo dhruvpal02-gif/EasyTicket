@@ -1,6 +1,6 @@
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 // ── OTP In-Memory Store ───────────────────────────────────────────────────────
 const otpStore = new Map();
@@ -13,22 +13,9 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
-let transporter;
-if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, 
-    requireTLS: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    },
-    family: 4 // CRITICAL: Forces IPv4 to prevent Render timeout
-  });
+let resend;
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -67,39 +54,33 @@ export const sendOtp = async (req, res) => {
       expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
     });
 
-    if (transporter) {
+    if (resend) {
       try {
-        console.log(`[OTP] Attempting to send OTP email to ${normalizedEmail}...`);
-        
-        // Ensure connection works before sending (this helps catch auth/network errors early)
-        await transporter.verify();
-        console.log(`[OTP] Transporter verified successfully. Sending mail...`);
+        console.log(`[OTP] Attempting to send OTP email via Resend to ${normalizedEmail}...`);
 
-        const info = await transporter.sendMail({
-          from: `"EasyTicket Admin" <${process.env.EMAIL_USER}>`,
+        const data = await resend.emails.send({
+          from: 'onboarding@resend.dev',
           to: normalizedEmail,
           subject: 'EasyTicket Organizer Registration - OTP Verification',
           text: `Your OTP for EasyTicket registration is: ${otp}. It will expire in 5 minutes.`,
           html: `<h3>Welcome to EasyTicket!</h3><p>Your OTP for registration is: <strong style="font-size: 1.2rem;">${otp}</strong></p><p>It will expire in 5 minutes.</p>`,
         });
+
+        if (data.error) {
+          throw new Error(data.error.message || 'Resend API returned an error');
+        }
         
-        console.log(`[OTP] Email sent successfully! Message ID: ${info.messageId}`);
+        console.log(`[OTP] Email sent successfully via Resend! ID: ${data.data?.id}`);
       } catch (emailError) {
         console.error('================ EMAIL SENDING ERROR ================');
-        console.error('Error Name:', emailError.name);
         console.error('Error Message:', emailError.message);
-        console.error('Error Code:', emailError.code);
-        console.error('Error Command:', emailError.command);
         console.error('Full Stack:', emailError.stack);
         console.error('=====================================================');
         
-        // Note: App Passwords in Google should be a 16-character string without spaces.
-        // E.g., 'abcd efgh ijkl mnop' should be stored as 'abcdefghijklmnop' in Render env vars.
-        
-        return res.status(500).json({ message: 'Failed to send OTP email. Please check server logs.' });
+        return res.status(500).json({ message: 'Failed to send OTP email via Resend. Please check server logs.' });
       }
     } else {
-      console.warn(`[OTP] Email not configured! Mock OTP for ${normalizedEmail} is ${otp}`);
+      console.warn(`[OTP] Resend API key not configured! Mock OTP for ${normalizedEmail} is ${otp}`);
     }
 
     return res.status(200).json({ message: 'OTP sent successfully.' });
