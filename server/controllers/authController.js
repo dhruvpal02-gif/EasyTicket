@@ -16,11 +16,18 @@ setInterval(() => {
 let transporter;
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
-    }
+    },
+    // This strictly forces Node to resolve IPv4 addresses, bypassing the ENETUNREACH issue
+    tls: {
+      rejectUnauthorized: false
+    },
+    family: 4 
   });
 }
 
@@ -61,13 +68,36 @@ export const sendOtp = async (req, res) => {
     });
 
     if (transporter) {
-      await transporter.sendMail({
-        from: `"EasyTicket Admin" <${process.env.EMAIL_USER}>`,
-        to: normalizedEmail,
-        subject: 'EasyTicket Organizer Registration - OTP Verification',
-        text: `Your OTP for EasyTicket registration is: ${otp}. It will expire in 5 minutes.`,
-        html: `<h3>Welcome to EasyTicket!</h3><p>Your OTP for registration is: <strong style="font-size: 1.2rem;">${otp}</strong></p><p>It will expire in 5 minutes.</p>`,
-      });
+      try {
+        console.log(`[OTP] Attempting to send OTP email to ${normalizedEmail}...`);
+        
+        // Ensure connection works before sending (this helps catch auth/network errors early)
+        await transporter.verify();
+        console.log(`[OTP] Transporter verified successfully. Sending mail...`);
+
+        const info = await transporter.sendMail({
+          from: `"EasyTicket Admin" <${process.env.EMAIL_USER}>`,
+          to: normalizedEmail,
+          subject: 'EasyTicket Organizer Registration - OTP Verification',
+          text: `Your OTP for EasyTicket registration is: ${otp}. It will expire in 5 minutes.`,
+          html: `<h3>Welcome to EasyTicket!</h3><p>Your OTP for registration is: <strong style="font-size: 1.2rem;">${otp}</strong></p><p>It will expire in 5 minutes.</p>`,
+        });
+        
+        console.log(`[OTP] Email sent successfully! Message ID: ${info.messageId}`);
+      } catch (emailError) {
+        console.error('================ EMAIL SENDING ERROR ================');
+        console.error('Error Name:', emailError.name);
+        console.error('Error Message:', emailError.message);
+        console.error('Error Code:', emailError.code);
+        console.error('Error Command:', emailError.command);
+        console.error('Full Stack:', emailError.stack);
+        console.error('=====================================================');
+        
+        // Note: App Passwords in Google should be a 16-character string without spaces.
+        // E.g., 'abcd efgh ijkl mnop' should be stored as 'abcdefghijklmnop' in Render env vars.
+        
+        return res.status(500).json({ message: 'Failed to send OTP email. Please check server logs.' });
+      }
     } else {
       console.warn(`[OTP] Email not configured! Mock OTP for ${normalizedEmail} is ${otp}`);
     }
@@ -75,7 +105,7 @@ export const sendOtp = async (req, res) => {
     return res.status(200).json({ message: 'OTP sent successfully.' });
   } catch (error) {
     console.error('sendOtp error:', error.message);
-    return res.status(500).json({ message: 'Server error sending OTP.' });
+    return res.status(500).json({ message: 'Server error generating OTP.' });
   }
 };
 
