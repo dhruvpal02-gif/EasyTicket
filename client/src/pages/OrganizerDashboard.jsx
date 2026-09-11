@@ -287,8 +287,11 @@ const OrganizerDashboard = () => {
                       {!event.isPublished ? (
                         <>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <button className="btn btn-outline" onClick={() => handlePublish(event._id)}>Publish</button>
                             <button className="btn btn-outline" onClick={() => openEditModal(event)}>Edit Event</button>
+                            <button className="btn btn-outline" onClick={() => openQrModal(event)}>Share QR</button>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <button className="btn btn-outline" onClick={() => handlePublish(event._id)}>Publish Event</button>
                           </div>
                           <button 
                             className="btn btn-outline" 
@@ -460,7 +463,7 @@ const OrganizerDashboard = () => {
             <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', margin: '1.5rem 0' }}>
               <QRCodeSVG 
                 id="dashboard-qr-code"
-                value={`${window.location.origin}/book/${qrEvent._id}`} 
+                value={`${window.location.origin}/events/${qrEvent._id}`} 
                 size={200}
                 level="H"
                 includeMargin={true}
@@ -470,7 +473,7 @@ const OrganizerDashboard = () => {
             <div className="qr-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <button 
                 className="btn btn-primary btn-full" 
-                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/book/${qrEvent._id}`).then(() => alert('Copied!'))}
+                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/events/${qrEvent._id}`).then(() => alert('Copied!'))}
               >
                 Copy Event Link
               </button>

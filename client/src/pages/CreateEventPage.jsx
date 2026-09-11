@@ -503,7 +503,7 @@ const CreateEventPage = () => {
             <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', margin: '1.5rem 0' }}>
               <QRCodeSVG 
                 id="event-qr-code"
-                value={`${window.location.origin}/book/${successEvent._id}`} 
+                value={`${window.location.origin}/events/${successEvent._id}`} 
                 size={200}
                 level="H"
                 includeMargin={true}
