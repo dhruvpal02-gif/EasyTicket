@@ -28,6 +28,7 @@ const safeUser = (user) => ({
   role: user.role,
   createdAt: user.createdAt,
   payoutDetails: user.payoutDetails,
+  bankDetails: user.bankDetails,
 });
 
 // ── POST /api/auth/send-otp ───────────────────────────────────────────────────
@@ -212,5 +213,37 @@ export const updatePayoutDetails = async (req, res) => {
   } catch (error) {
     console.error('updatePayoutDetails error:', error.message);
     return res.status(500).json({ message: 'Server error updating payout details.' });
+  }
+};
+// -- PATCH /api/auth/bank-details ----------------------------------------------
+
+export const updateBankDetails = async (req, res) => {
+  try {
+    const { accountName, accountNumber, ifscCode } = req.body;
+    
+    if (!accountName && !accountNumber && !ifscCode) {
+      return res.status(400).json({ message: 'Please provide bank details to update.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    user.bankDetails = {
+      accountName: accountName || user.bankDetails?.accountName,
+      accountNumber: accountNumber || user.bankDetails?.accountNumber,
+      ifscCode: ifscCode || user.bankDetails?.ifscCode,
+    };
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      message: 'Bank details updated successfully.',
+      user: safeUser(updatedUser)
+    });
+  } catch (error) {
+    console.error('updateBankDetails error:', error.message);
+    return res.status(500).json({ message: 'Server error updating bank details.' });
   }
 };

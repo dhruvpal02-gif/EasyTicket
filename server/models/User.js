@@ -36,6 +36,11 @@ const userSchema = new mongoose.Schema(
       ifscCode: { type: String, trim: true },
       upiId: { type: String, trim: true },
     },
+    bankDetails: {
+      accountName: { type: String, trim: true },
+      accountNumber: { type: String, trim: true },
+      ifscCode: { type: String, trim: true },
+    },
   },
   { timestamps: true }
 );

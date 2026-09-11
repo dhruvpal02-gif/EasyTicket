@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, updatePayoutDetails, sendOtp } from '../controllers/authController.js';
+import { register, login, updatePayoutDetails, updateBankDetails, sendOtp } from '../controllers/authController.js';
 import { protect, requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -15,5 +15,6 @@ router.get('/me', protect, (req, res) => {
 });
 
 router.patch('/payout-details', protect, requireRole('organizer'), updatePayoutDetails);
+router.patch('/bank-details', protect, requireRole('organizer'), updateBankDetails);
 
 export default router;

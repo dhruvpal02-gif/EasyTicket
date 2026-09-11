@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import useAuth from '../hooks/useAuth';
+import { QRCodeSVG } from 'qrcode.react';
 import './CreateEventPage.css';
 
 const CreateEventPage = () => {
@@ -11,6 +12,11 @@ const CreateEventPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankForm, setBankForm] = useState({ accountName: '', accountNumber: '', ifscCode: '' });
+  
+  const [successEvent, setSuccessEvent] = useState(null);
 
   const [step, setStep] = useState(1); // 1 = Template Selection, 2 = Form Details
 
@@ -122,6 +128,69 @@ const CreateEventPage = () => {
     return null;
   };
 
+  const handleSaveBankDetails = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.patch('/api/auth/bank-details', bankForm);
+      setShowBankModal(false);
+      // Wait a moment for context/state updates, though api call succeeded
+      await publishEvent();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save bank details.');
+      setLoading(false);
+    }
+  };
+
+  const publishEvent = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      Object.keys(form).forEach(key => formData.append(key, form[key]));
+      formData.append('ticketTypes', JSON.stringify(ticketTypes));
+      formData.append('eventTemplate', eventTemplate);
+      formData.append('entryPolicy', entryPolicy);
+      if (image) {
+        formData.append('image', image);
+      }
+
+      const res = await api.post('/api/events', formData);
+      localStorage.removeItem('draftEvent'); // Clear draft on success
+      
+      // Instead of navigate, show the success modal with QR Code
+      setSuccessEvent(res.data.event || res.data);
+    } catch (err) {
+      const backendMessage = err.response?.data?.message;
+      setError(backendMessage || 'Failed to connect to the server. Please check your network and try again.');
+      window.scrollTo(0, 0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById('event-qr-code');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width + 40; // Add padding
+      canvas.height = img.height + 40;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 20, 20);
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `event-qr-${successEvent._id}.png`;
+      downloadLink.href = `${pngFile}`;
+      downloadLink.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationError = validate();
@@ -139,29 +208,13 @@ const CreateEventPage = () => {
       return;
     }
 
-    setLoading(true);
-    setError('');
-
-    try {
-      const formData = new FormData();
-      Object.keys(form).forEach(key => formData.append(key, form[key]));
-      formData.append('ticketTypes', JSON.stringify(ticketTypes));
-      formData.append('eventTemplate', eventTemplate);
-      formData.append('entryPolicy', entryPolicy);
-      if (image) {
-        formData.append('image', image);
-      }
-
-      await api.post('/api/events', formData);
-      localStorage.removeItem('draftEvent'); // Clear draft on success
-      navigate('/dashboard');
-    } catch (err) {
-      const backendMessage = err.response?.data?.message;
-      setError(backendMessage || 'Failed to connect to the server. Please check your network and try again.');
-      window.scrollTo(0, 0);
-    } finally {
-      setLoading(false);
+    const hasBankDetails = user.bankDetails && (user.bankDetails.accountName || user.bankDetails.accountNumber);
+    if (!hasBankDetails) {
+      setShowBankModal(true);
+      return;
     }
+
+    await publishEvent();
   };
 
   return (
@@ -404,6 +457,71 @@ const CreateEventPage = () => {
             <button className="btn-close-modal" onClick={() => setShowAuthModal(false)}>
               Keep editing
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bank Details Modal */}
+      {showBankModal && (
+        <div className="auth-modal-overlay">
+          <div className="auth-modal" style={{ maxWidth: '500px' }}>
+            <h3>Payout Details Required</h3>
+            <p>You need to provide bank details so we can process your ticket sales payouts.</p>
+            <form onSubmit={handleSaveBankDetails}>
+              <div className="form-group">
+                <label>Account Holder Name</label>
+                <input type="text" value={bankForm.accountName} onChange={(e) => setBankForm({...bankForm, accountName: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>Account Number</label>
+                <input type="text" value={bankForm.accountNumber} onChange={(e) => setBankForm({...bankForm, accountNumber: e.target.value})} required />
+              </div>
+              <div className="form-group">
+                <label>IFSC Code</label>
+                <input type="text" value={bankForm.ifscCode} onChange={(e) => setBankForm({...bankForm, ifscCode: e.target.value})} required />
+              </div>
+              <div className="auth-modal-actions" style={{ marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setShowBankModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  {loading ? 'Saving...' : 'Save & Publish Event'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success QR Modal */}
+      {successEvent && (
+        <div className="auth-modal-overlay">
+          <div className="auth-modal" style={{ textAlign: 'center', maxWidth: '450px' }}>
+            <h2 style={{ color: '#047857', marginBottom: '0.5rem' }}>🎉 Event Created!</h2>
+            <p>Your event has been published successfully.</p>
+            
+            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', margin: '1.5rem 0' }}>
+              <QRCodeSVG 
+                id="event-qr-code"
+                value={`${window.location.origin}/book/${successEvent._id}`} 
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+            
+            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '1.5rem' }}>
+              Scan this QR code to view and book tickets. Share it on WhatsApp, Instagram, or print it!
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button className="btn btn-primary btn-full" onClick={handleDownloadQR}>
+                ⬇️ Download QR Code
+              </button>
+              <button className="btn btn-outline btn-full" onClick={() => navigate('/dashboard')}>
+                Go to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       )}

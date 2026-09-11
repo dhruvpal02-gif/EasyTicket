@@ -15,6 +15,9 @@ const RegisterPage = () => {
     password: '',
     confirmPassword: '',
     otp: '',
+    accountName: '',
+    accountNumber: '',
+    ifscCode: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -94,12 +97,35 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password, 'organizer', form.otp);
-      navigate('/events/create', { replace: true });
+      setStep(3); // Proceed to Bank Details step
+      setError('');
+      setSuccess('');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Invalid OTP.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveBankDetails = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.patch('/api/auth/bank-details', {
+        accountName: form.accountName,
+        accountNumber: form.accountNumber,
+        ifscCode: form.ifscCode,
+      });
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save bank details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipBankDetails = () => {
+    navigate('/dashboard', { replace: true });
   };
 
   return (
@@ -272,6 +298,70 @@ const RegisterPage = () => {
                 disabled={loading || resendLoading}
               >
                 ← Back to Edit Details
+              </button>
+            </div>
+          </form>
+        )}
+
+        {step === 3 && (
+          <form onSubmit={handleSaveBankDetails} noValidate>
+            <div className="form-group" style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <p style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '1rem' }}>
+                Account created successfully! Add your bank details to receive payouts for ticket sales.
+              </p>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="accountName">Account Holder Name</label>
+              <input
+                id="accountName"
+                name="accountName"
+                type="text"
+                placeholder="e.g. John Doe"
+                value={form.accountName}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="accountNumber">Account Number</label>
+              <input
+                id="accountNumber"
+                name="accountNumber"
+                type="text"
+                placeholder="e.g. 123456789012"
+                value={form.accountNumber}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="ifscCode">IFSC Code</label>
+              <input
+                id="ifscCode"
+                name="ifscCode"
+                type="text"
+                placeholder="e.g. HDFC0001234"
+                value={form.ifscCode}
+                onChange={handleChange}
+                disabled={loading}
+              />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+              <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                {loading ? 'Saving...' : 'Save & Continue'}
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-full" 
+                onClick={handleSkipBankDetails}
+                disabled={loading}
+                style={{ background: 'transparent' }}
+              >
+                Skip for Now
               </button>
             </div>
           </form>
