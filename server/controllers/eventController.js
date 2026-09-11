@@ -113,12 +113,7 @@ export const getEventById = async (req, res) => {
     const event = await Event.findById(req.params.id).populate('organizer', 'name email');
     if (!event) return res.status(404).json({ message: 'Event not found.' });
 
-    // If event is not published, only the owner can view it
-    if (!event.isPublished) {
-      if (!req.user || req.user._id.toString() !== event.organizer._id.toString()) {
-        return res.status(404).json({ message: 'Event not found or not yet published.' });
-      }
-    }
+    // Removed isPublished and req.user ownership check to allow completely public QR scans
 
     return res.json(event);
   } catch (error) {
