@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
+import { QRCodeSVG } from 'qrcode.react';
 import './OrganizerDashboard.css';
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -19,10 +20,19 @@ const OrganizerDashboard = () => {
   // Export state
   const [exporting, setExporting] = useState(null);
 
-  // Modal state
+// Modal state
   const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [qrData, setQrData] = useState(null);
-  const [qrLoading, setQrLoading] = useState(false);
+  const [qrEvent, setQrEvent] = useState(null);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    date: '',
+    time: '',
+    ticketPrice: 0,
+  });
 
   // Payout form state
   const [payoutForm, setPayoutForm] = useState({
@@ -131,24 +141,77 @@ const OrganizerDashboard = () => {
     }
   };
 
-  const openQrModal = async (id) => {
+  const openQrModal = (event) => {
+    setQrEvent(event);
     setQrModalOpen(true);
-    setQrLoading(true);
-    setQrData(null);
-    try {
-      const { data } = await api.get(`/api/events/${id}/qr`);
-      setQrData(data);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to generate Event QR.');
-      setQrModalOpen(false);
-    } finally {
-      setQrLoading(false);
-    }
   };
 
   const closeQrModal = () => {
     setQrModalOpen(false);
-    setQrData(null);
+    setQrEvent(null);
+  };
+
+  const handleDownloadQR = () => {
+    const svg = document.getElementById('dashboard-qr-code');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width + 40;
+      canvas.height = img.height + 40;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 20, 20);
+      const pngFile = canvas.toDataURL('image/png');
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `event-qr-${qrEvent._id}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const openEditModal = (event) => {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      ticketPrice: event.ticketTypes?.[0]?.price || 0,
+    });
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingEvent(null);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const updatedTicketTypes = editingEvent.ticketTypes.map((t, idx) => {
+         if (idx === 0) return { ...t, price: Number(editForm.ticketPrice) };
+         return t;
+      });
+      
+      const payload = {
+        title: editForm.title,
+        description: editForm.description,
+        date: editForm.date,
+        time: editForm.time,
+        ticketTypes: JSON.stringify(updatedTicketTypes)
+      };
+      
+      const { data } = await api.put(`/api/events/${editingEvent._id}`, payload);
+      setEvents(events.map(ev => ev._id === editingEvent._id ? data : ev));
+      setEditModalOpen(false);
+      alert('Event updated successfully!');
+    } catch(err) {
+      alert(err.response?.data?.message || 'Failed to update event.');
+    }
   };
 
   if (loading) return <div className="page-container"><p>Loading dashboard...</p></div>;
@@ -225,7 +288,7 @@ const OrganizerDashboard = () => {
                         <>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <button className="btn btn-outline" onClick={() => handlePublish(event._id)}>Publish</button>
-                            <Link to={`/events/${event._id}`} className="btn btn-outline" style={{ textAlign: 'center' }}>Preview</Link>
+                            <button className="btn btn-outline" onClick={() => openEditModal(event)}>Edit Event</button>
                           </div>
                           <button 
                             className="btn btn-outline" 
@@ -240,8 +303,11 @@ const OrganizerDashboard = () => {
                       ) : (
                         <>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                            <Link to={`/events/${event._id}`} className="btn btn-outline" style={{ textAlign: 'center' }}>View</Link>
-                            <button className="btn btn-outline" onClick={() => openQrModal(event._id)}>Event QR</button>
+                            <button className="btn btn-outline" onClick={() => openEditModal(event)}>Edit Event</button>
+                            <button className="btn btn-outline" onClick={() => openQrModal(event)}>Share QR</button>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Link to={`/events/${event._id}`} className="btn btn-outline" style={{ textAlign: 'center' }}>View Public Page</Link>
                           </div>
                           <button 
                             className="btn btn-outline" 
@@ -321,33 +387,97 @@ const OrganizerDashboard = () => {
         </div>
       )}
 
-      {/* QR Modal */}
-      {qrModalOpen && (
-        <div className="qr-modal-overlay" onClick={closeQrModal}>
-          <div className="qr-modal-content" onClick={e => e.stopPropagation()}>
-            <button className="qr-modal-close" onClick={closeQrModal}>&times;</button>
-            <h2>Event QR Code</h2>
-            <p>Scan this QR code to open this event</p>
-            
-            {qrLoading ? (
-              <div className="qr-placeholder">Generating...</div>
-            ) : qrData ? (
-              <div className="qr-result">
-                <img src={qrData.qrCodeDataUri} alt="Event QR Code" className="event-qr-img" />
-                <input type="text" readOnly value={qrData.url} className="qr-url-input" />
-                <div className="qr-actions">
-                  <button 
-                    className="btn btn-primary" 
-                    onClick={() => navigator.clipboard.writeText(qrData.url).then(() => alert('Copied!'))}
-                  >
-                    Copy Event Link
-                  </button>
-                  <a href={qrData.qrCodeDataUri} download="event-qr.png" className="btn btn-outline">
-                    Download QR
-                  </a>
+      {/* Edit Event Modal */}
+      {editModalOpen && (
+        <div className="qr-modal-overlay" onClick={closeEditModal}>
+          <div className="qr-modal-content" style={{ maxWidth: '500px' }} onClick={e => e.stopPropagation()}>
+            <button className="qr-modal-close" onClick={closeEditModal}>&times;</button>
+            <h2>Edit Event</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className="form-group">
+                <label>Event Title</label>
+                <input 
+                  type="text" 
+                  value={editForm.title} 
+                  onChange={(e) => setEditForm({...editForm, title: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label>Date</label>
+                  <input 
+                    type="date" 
+                    value={editForm.date} 
+                    onChange={(e) => setEditForm({...editForm, date: e.target.value})} 
+                    required 
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Time</label>
+                  <input 
+                    type="time" 
+                    value={editForm.time} 
+                    onChange={(e) => setEditForm({...editForm, time: e.target.value})} 
+                    required 
+                  />
                 </div>
               </div>
-            ) : null}
+              <div className="form-group">
+                <label>Ticket Price (₹)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editForm.ticketPrice} 
+                  onChange={(e) => setEditForm({...editForm, ticketPrice: e.target.value})} 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea 
+                  rows="4"
+                  value={editForm.description} 
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})} 
+                  required 
+                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #d1d5db', borderRadius: '0.5rem' }}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary btn-full">Save Changes</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Share QR Modal */}
+      {qrModalOpen && qrEvent && (
+        <div className="qr-modal-overlay" onClick={closeQrModal}>
+          <div className="qr-modal-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', maxWidth: '450px' }}>
+            <button className="qr-modal-close" onClick={closeQrModal}>&times;</button>
+            <h2>Event QR Code</h2>
+            <p>Scan this QR code to view and book tickets.</p>
+            
+            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', margin: '1.5rem 0' }}>
+              <QRCodeSVG 
+                id="dashboard-qr-code"
+                value={`${window.location.origin}/book/${qrEvent._id}`} 
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <div className="qr-actions" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                className="btn btn-primary btn-full" 
+                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/book/${qrEvent._id}`).then(() => alert('Copied!'))}
+              >
+                Copy Event Link
+              </button>
+              <button onClick={handleDownloadQR} className="btn btn-outline btn-full">
+                ⬇️ Download QR Code
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -63,11 +63,12 @@ export const createEvent = [
         venue,
         city,
         image: resolveImage(req),
-        // Always take organizer from the verified JWT — never from the request body
+        // Always take organizer from the verified JWT 
         organizer: req.user._id,
         ticketTypes,
         eventTemplate: eventTemplate || 'custom',
         entryPolicy: entryPolicy || 'single',
+        isPublished: true, // Events created from frontend are immediately published
       });
 
       return res.status(201).json(event);

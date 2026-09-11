@@ -27,6 +27,6 @@ router.patch('/:id/publish', protect, requireRole('organizer'), publishEvent);
 router.get('/:id/qr', protect, requireRole('organizer'), getEventQr);
 
 // ── Public (single event) ─────────────────────────────────────────────────────
-router.get('/:id', optionalAuth, getEventById);
+router.get('/:id', getEventById);
 
 export default router;
