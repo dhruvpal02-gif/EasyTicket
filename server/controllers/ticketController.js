@@ -398,3 +398,52 @@ export const verifyTicket = async (req, res) => {
     return res.status(500).json({ message: 'Server error during ticket verification.' });
   }
 };
+
+// GET /api/tickets/track/:identifier (Public Manual Verification)
+export const verifyTicketPublic = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    
+    let ticket;
+    if (identifier.startsWith('TRK-')) {
+      const hexPrefix = identifier.replace('TRK-', '').toLowerCase();
+      if (hexPrefix.length !== 8) {
+        return res.status(404).json({ message: 'Invalid Track ID format.' });
+      }
+      ticket = await Ticket.findOne({
+        $expr: {
+          $eq: [
+            { $substr: [{ $toString: "$_id" }, 0, 8] },
+            hexPrefix
+          ]
+        }
+      }).populate('event', 'title date time city venue');
+    } else {
+      ticket = await Ticket.findOne({ ticketId: identifier }).populate('event', 'title date time city venue');
+    }
+
+    if (!ticket) {
+      return res.status(404).json({ message: 'Invalid Ticket ? - No booking found with this ID.' });
+    }
+
+    res.json({
+      _id: ticket._id,
+      ticketId: ticket.ticketId,
+      status: ticket.status,
+      paymentStatus: ticket.paymentStatus,
+      attendeeName: ticket.attendeeName,
+      quantity: ticket.quantity,
+      ticketTypeName: ticket.ticketTypeName,
+      event: {
+        title: ticket.event.title,
+        date: ticket.event.date,
+        time: ticket.event.time,
+        city: ticket.event.city,
+        venue: ticket.event.venue,
+      }
+    });
+  } catch (error) {
+    console.error('verifyTicketPublic error:', error.message);
+    res.status(500).json({ message: 'Server error during verification.' });
+  }
+};

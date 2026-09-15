@@ -13,12 +13,13 @@ import PaymentPage from './pages/PaymentPage';
 import MyTicketsPage from './pages/MyTicketsPage';
 import TicketDetailsPage from './pages/TicketDetailsPage';
 import VerifyTicketPage from './pages/VerifyTicketPage';
+import TrackTicketPage from './pages/TrackTicketPage';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return null; // Or a minimal loading spinner if you prefer
+    return <div className="page-container">Loading...</div>;
   }
 
   return (
@@ -28,6 +29,7 @@ function App() {
         {/* Public routes */}
         <Route path="/login"    element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify" element={<TrackTicketPage />} />
         
         {/* Home page is public now to browse events */}
         <Route path="/" element={user ? <Navigate to="/events/create" replace /> : <HomePage />} />

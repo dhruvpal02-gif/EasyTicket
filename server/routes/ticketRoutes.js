@@ -9,9 +9,13 @@ import {
   verifyPayment,
   failPayment,
   verifyTicket,
+  verifyTicketPublic,
 } from '../controllers/ticketController.js';
 
 const router = express.Router();
+
+// 🎟️ Public Track / Verify Route
+router.get('/track/:identifier', verifyTicketPublic);
 
 // ── Customer & Guest Routes ───────────────────────────────────────────────────
 // /my-tickets MUST come before /:id to prevent Express from treating 'my-tickets' as an ID

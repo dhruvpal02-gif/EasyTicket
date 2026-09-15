@@ -57,12 +57,14 @@ const Navbar = () => {
                   </>
                 )}
                 
+                <NavLink to="/verify" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>Verify Ticket</NavLink>
                 <button className="btn btn-outline" onClick={() => setShowLogoutModal(true)}>
                   Logout
                 </button>
               </>
             ) : (
               <>
+                <NavLink to="/verify" className={({isActive}) => isActive ? "nav-link active" : "nav-link"} onClick={closeMenu}>Verify Ticket</NavLink>
                 <Link to="/login" className="btn btn-outline" onClick={closeMenu}>Login</Link>
                 <Link to="/register" className="btn btn-primary" onClick={closeMenu}>Register</Link>
               </>
