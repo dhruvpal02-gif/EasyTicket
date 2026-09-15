@@ -39,6 +39,7 @@ const CreateEventPage = () => {
 
   const [eventTemplate, setEventTemplate] = useState('mela');
   const [entryPolicy, setEntryPolicy] = useState('multiple');
+  const [requireAttendeePhoto, setRequireAttendeePhoto] = useState(false);
 
   // Restore draft event from localStorage
   useEffect(() => {
@@ -50,6 +51,7 @@ const CreateEventPage = () => {
         if (parsed.ticketTypes) setTicketTypes(parsed.ticketTypes);
         if (parsed.eventTemplate) setEventTemplate(parsed.eventTemplate);
         if (parsed.entryPolicy) setEntryPolicy(parsed.entryPolicy);
+        if (parsed.requireAttendeePhoto !== undefined) setRequireAttendeePhoto(parsed.requireAttendeePhoto);
         if (parsed.step) setStep(parsed.step);
       } catch (e) {
         console.error("Failed to parse draft event", e);
@@ -152,6 +154,7 @@ const CreateEventPage = () => {
       formData.append('ticketTypes', JSON.stringify(ticketTypes));
       formData.append('eventTemplate', eventTemplate);
       formData.append('entryPolicy', entryPolicy);
+      formData.append('requireAttendeePhoto', requireAttendeePhoto);
       if (image) {
         formData.append('image', image);
       }
@@ -202,7 +205,7 @@ const CreateEventPage = () => {
 
     // Require Auth to Publish
     if (!user) {
-      const draft = { form, ticketTypes, eventTemplate, entryPolicy, step };
+      const draft = { form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step };
       localStorage.setItem('draftEvent', JSON.stringify(draft));
       setShowAuthModal(true);
       return;
@@ -284,6 +287,19 @@ const CreateEventPage = () => {
               </select>
             </div>
           )}
+
+          <div className="form-group" style={{ marginBottom: '2rem', padding: '1.25rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, color: '#0f172a', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={requireAttendeePhoto} 
+                onChange={(e) => setRequireAttendeePhoto(e.target.checked)} 
+                style={{ width: '1.2rem', height: '1.2rem' }}
+              />
+              Require attendee to upload a photo for identity verification
+            </label>
+            <p style={{ margin: '0.5rem 0 0 2rem', fontSize: '0.85rem', color: '#64748b' }}>If checked, customers must upload a photo of their face during checkout. This photo will be visible to scanners at the gate.</p>
+          </div>
 
           <section className="form-section">
             <h2>Event Details</h2>

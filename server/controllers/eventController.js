@@ -38,7 +38,7 @@ export const createEvent = [
   runUploadIfMultipart,
   async (req, res) => {
     try {
-      const { title, description, date, time, venue, city, eventTemplate, entryPolicy } = req.body;
+      const { title, description, date, time, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
 
       if (!title || !description || !date || !time || !venue || !city) {
         return res.status(400).json({ message: 'All event fields are required.' });
@@ -68,6 +68,7 @@ export const createEvent = [
         ticketTypes,
         eventTemplate: eventTemplate || 'custom',
         entryPolicy: entryPolicy || 'single',
+        requireAttendeePhoto: requireAttendeePhoto === 'true' || requireAttendeePhoto === true,
         isPublished: true, // Events created from frontend are immediately published
       });
 
@@ -136,7 +137,7 @@ export const updateEvent = [
         return res.status(403).json({ message: 'You are not the owner of this event.' });
       }
 
-      const { title, description, date, time, venue, city, eventTemplate, entryPolicy } = req.body;
+      const { title, description, date, time, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
 
       if (title)       event.title       = title;
       if (description) event.description = description;
@@ -146,6 +147,9 @@ export const updateEvent = [
       if (city)        event.city        = city;
       if (eventTemplate) event.eventTemplate = eventTemplate;
       if (entryPolicy)   event.entryPolicy   = entryPolicy;
+      if (requireAttendeePhoto !== undefined) {
+        event.requireAttendeePhoto = requireAttendeePhoto === 'true' || requireAttendeePhoto === true;
+      }
 
       const imageResolved = resolveImage(req, event.image);
       event.image = imageResolved;

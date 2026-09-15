@@ -94,6 +94,10 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    requireAttendeePhoto: {
+      type: Boolean,
+      default: false,
+    },
     publishedAt: {
       type: Date,
     },

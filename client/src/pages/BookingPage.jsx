@@ -21,6 +21,7 @@ const BookingPage = () => {
     attendeeName: '',
     whatsappNumber: '',
   });
+  const [attendeePhoto, setAttendeePhoto] = useState(null);
 
   useEffect(() => {
     if (!ticketTypeId) return navigate(`/events/${eventId}`);
@@ -46,6 +47,12 @@ const BookingPage = () => {
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setAttendeePhoto(e.target.files[0]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (qty < 1) return setError('Number of members must be at least 1.');
@@ -55,6 +62,10 @@ const BookingPage = () => {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(form.whatsappNumber)) {
       return setError('Please enter a valid 10-digit WhatsApp number.');
+    }
+    
+    if (event.requireAttendeePhoto && !attendeePhoto) {
+      return setError('An attendee photo is required for this event.');
     }
     
     setBookingLoading(true);
@@ -67,6 +78,9 @@ const BookingPage = () => {
       formData.append('quantity', qty);
       formData.append('attendeeName', form.attendeeName);
       formData.append('attendeePhone', form.whatsappNumber);
+      if (attendeePhoto) {
+        formData.append('attendeePhoto', attendeePhoto);
+      }
 
       const { data } = await api.post('/api/tickets', formData);
       // Redirect to payment flow
@@ -125,6 +139,24 @@ const BookingPage = () => {
                 <label htmlFor="whatsappNumber">WhatsApp Number (10 digits)</label>
                 <input type="tel" id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleChange} placeholder="9876543210" pattern="\d{10}" maxLength="10" required />
               </div>
+              {event.requireAttendeePhoto && (
+                <div className="form-group" style={{ marginTop: '1.5rem', padding: '1rem', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '8px' }}>
+                  <label htmlFor="attendeePhoto" style={{ color: '#991b1b', fontWeight: 'bold' }}>
+                    Attendee Photo Required *
+                  </label>
+                  <p style={{ fontSize: '0.85rem', color: '#7f1d1d', marginBottom: '0.75rem' }}>
+                    The event organizer requires a clear photo of your face for identity verification at the gate.
+                  </p>
+                  <input 
+                    type="file" 
+                    id="attendeePhoto" 
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    required
+                    style={{ background: '#fff', border: '1px solid #f87171' }}
+                  />
+                </div>
+              )}
             </section>
           </form>
         </div>

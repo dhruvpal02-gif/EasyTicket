@@ -12,23 +12,18 @@ const VerifyTicketPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [scannerActive, setScannerActive] = useState(true);
-  
-  // Manual Fallback inputs
-  const [manualTicketId, setManualTicketId] = useState('');
-  const [manualToken, setManualToken] = useState('');
-  const [showManual, setShowManual] = useState(false);
 
   let html5QrCode = null;
 
   useEffect(() => {
-    if (scannerActive && !showManual) {
+    if (scannerActive) {
       startScanner();
     } else {
       stopScanner();
     }
     return () => stopScanner();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scannerActive, showManual]);
+  }, [scannerActive]);
 
   const startScanner = () => {
     if (!html5QrCode) {
@@ -46,8 +41,7 @@ const VerifyTicketPage = () => {
       }
     ).catch(err => {
       console.error("Camera start error:", err);
-      setError("Camera permission denied or unavailable. Please use manual entry.");
-      setShowManual(true);
+      setError("Camera permission denied or unavailable. Cannot scan QR.");
     });
   };
 
@@ -71,13 +65,6 @@ const VerifyTicketPage = () => {
     }
   };
 
-  const handleManualSubmit = (e) => {
-    e.preventDefault();
-    if (!manualTicketId || !manualToken) return setError('Both ID and Token are required.');
-    setScannerActive(false);
-    verifyBackend(manualTicketId, manualToken);
-  };
-
   const verifyBackend = async (ticketId, qrToken) => {
     setLoading(true);
     setError(null);
@@ -97,9 +84,6 @@ const VerifyTicketPage = () => {
     setResult(null);
     setError(null);
     setScannerActive(true);
-    setShowManual(false);
-    setManualTicketId('');
-    setManualToken('');
   };
 
   return (
@@ -116,7 +100,7 @@ const VerifyTicketPage = () => {
       {/* Result UI - Success */}
       {result && (
         <div className={`verify-card ${result.entryPolicy === 'single' ? 'bg-green' : 'bg-blue'}`}>
-          <div className="verify-icon">✅</div>
+          <div className="verify-icon">✓</div>
           <h2 className="text-white">
             {result.entryPolicy === 'single' ? 'VALID: SINGLE ENTRY' : 'VALID: MULTIPLE ENTRY (PASS)'}
           </h2>
@@ -141,9 +125,9 @@ const VerifyTicketPage = () => {
       {/* Result UI - Error */}
       {error && !loading && (
         <div className="verify-card bg-red">
-          <div className="verify-icon">❌</div>
+          <div className="verify-icon">✗</div>
           <h2 className="text-white">
-            {error.error === 'Ticket Already Used' ? '⚠️ TICKET ALREADY USED' : 'INVALID TICKET'}
+            {error.error === 'Ticket Already Used' ? '🚨 TICKET ALREADY USED' : 'INVALID TICKET'}
           </h2>
           <div className="verify-details error-details">
             <p className="verify-error-msg">{error.error || error.message || 'Verification failed.'}</p>
@@ -161,36 +145,8 @@ const VerifyTicketPage = () => {
       {/* Scanner UI */}
       {scannerActive && !loading && !result && !error && (
         <div className="scanner-section">
-          {!showManual ? (
-            <>
-              <div id="qr-reader" className="qr-reader-container"></div>
-              <p className="help-text text-center mt-1">Please grant camera permissions.</p>
-              <button 
-                className="btn btn-outline btn-full mt-2" 
-                onClick={() => { stopScanner(); setShowManual(true); }}
-              >
-                Switch to Manual Entry
-              </button>
-            </>
-          ) : (
-            <div className="manual-entry-form">
-              <h3>Manual Entry</h3>
-              <form onSubmit={handleManualSubmit}>
-                <div className="form-group">
-                  <label>Ticket ID (e.g. TKT-123...)</label>
-                  <input type="text" value={manualTicketId} onChange={e => setManualTicketId(e.target.value)} required />
-                </div>
-                <div className="form-group">
-                  <label>QR Token (from payload)</label>
-                  <input type="text" value={manualToken} onChange={e => setManualToken(e.target.value)} required />
-                </div>
-                <button type="submit" className="btn btn-primary btn-full">Verify</button>
-                <button type="button" className="btn btn-outline btn-full mt-1" onClick={() => setShowManual(false)}>
-                  Back to Camera
-                </button>
-              </form>
-            </div>
-          )}
+          <div id="qr-reader" className="qr-reader-container"></div>
+          <p className="help-text text-center mt-1">Please grant camera permissions.</p>
         </div>
       )}
     </div>
