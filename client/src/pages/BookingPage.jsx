@@ -151,6 +151,7 @@ const BookingPage = () => {
                     type="file" 
                     id="attendeePhoto" 
                     accept="image/*"
+                    capture="user"
                     onChange={handleImageChange}
                     required
                     style={{ background: '#fff', border: '1px solid #f87171' }}

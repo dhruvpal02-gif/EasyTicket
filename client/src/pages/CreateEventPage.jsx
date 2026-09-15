@@ -288,19 +288,6 @@ const CreateEventPage = () => {
             </div>
           )}
 
-          <div className="form-group" style={{ marginBottom: '2rem', padding: '1.25rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, color: '#0f172a', cursor: 'pointer' }}>
-              <input 
-                type="checkbox" 
-                checked={requireAttendeePhoto} 
-                onChange={(e) => setRequireAttendeePhoto(e.target.checked)} 
-                style={{ width: '1.2rem', height: '1.2rem' }}
-              />
-              Require attendee to upload a photo for identity verification
-            </label>
-            <p style={{ margin: '0.5rem 0 0 2rem', fontSize: '0.85rem', color: '#64748b' }}>If checked, customers must upload a photo of their face during checkout. This photo will be visible to scanners at the gate.</p>
-          </div>
-
           <section className="form-section">
             <h2>Event Details</h2>
             <div className="form-group">
@@ -311,40 +298,44 @@ const CreateEventPage = () => {
               <label htmlFor="description">Description</label>
               <textarea id="description" name="description" rows="4" value={form.description} onChange={handleChange} placeholder="What is this event about?" required />
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="date">Date</label>
-                <div style={{ position: 'relative' }}>
-                  <input type="date" id="date" name="date" value={form.date} onChange={handleChange} required style={{ width: '100%', paddingRight: '2.5rem' }} />
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9ca3af', pointerEvents: 'none' }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                  </svg>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="date">Date</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type="date" id="date" name="date" value={form.date} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="time">Time</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type="time" id="time" name="time" value={form.time} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="time">Time</label>
-                <div style={{ position: 'relative' }}>
-                  <input type="time" id="time" name="time" value={form.time} onChange={handleChange} required style={{ width: '100%', paddingRight: '2.5rem' }} />
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9ca3af', pointerEvents: 'none' }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="venue">Venue Name</label>
@@ -439,6 +430,19 @@ const CreateEventPage = () => {
             <button type="button" className="btn btn-outline" onClick={addTicketType} style={{ marginTop: '0.5rem' }}>
               + Add Another Ticket Type
             </button>
+
+            <div className="form-group" style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input 
+                type="checkbox" 
+                id="requireAttendeePhoto"
+                checked={requireAttendeePhoto} 
+                onChange={(e) => setRequireAttendeePhoto(e.target.checked)} 
+                style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
+              />
+              <label htmlFor="requireAttendeePhoto" style={{ fontSize: '0.9rem', color: '#475569', cursor: 'pointer', fontWeight: 500, margin: 0 }}>
+                Require attendee photo upload for this event
+              </label>
+            </div>
           </section>
 
           <div className="form-actions">
