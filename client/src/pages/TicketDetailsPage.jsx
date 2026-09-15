@@ -141,6 +141,23 @@ const TicketDetailsPage = () => {
         {/* PERFORATED DIVIDER */}
         <div className="ticket-divider"></div>
 
+        {/* LARGE PHOTO BOX (For Gatekeepers) */}
+        {ticket.attendeePhoto && (
+          <div style={{ padding: '1.5rem', borderBottom: '2px dashed #e5e7eb', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
+              <span className="ticket-label" style={{ margin: 0, fontWeight: '700', letterSpacing: '0.05em', color: '#475569' }}>ATTENDEE PHOTO ID</span>
+            </div>
+            <div style={{ width: '100%', height: '260px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #cbd5e1', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
+              <img 
+                src={getImageUrl(ticket.attendeePhoto)} 
+                alt="Attendee Verification" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                crossOrigin="anonymous" 
+              />
+            </div>
+          </div>
+        )}
+
         {/* BOTTOM SECTION */}
         <div className="ticket-bottom-section">
           <div className="bottom-left-grid">
