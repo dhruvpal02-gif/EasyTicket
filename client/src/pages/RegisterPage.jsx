@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import api from '../services/api';
@@ -8,12 +8,19 @@ import './AuthPage.css';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { googleLogin, updateUser } = useAuth();
+  const { register, updateUser } = useAuth();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
+  const [registrationForm, setRegistrationForm] = useState({
+    name: '',
+    email: '',
+    password: ''
+  });
+
   const [bankDetails, setBankDetails] = useState({
     accountName: '',
     accountNumber: '',
@@ -27,13 +34,41 @@ const RegisterPage = () => {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      await googleLogin(user.email, user.displayName, user.photoURL, user.uid, 'organizer');
+      setRegistrationForm({
+        name: user.displayName || '',
+        email: user.email || '',
+        password: ''
+      });
       
-      // Successfully authenticated via Google. Move to Bank Details.
+      // Move to Password Registration Step
       setStep(2);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || err.message || 'Registration failed.');
+      setError(err.response?.data?.message || err.message || 'Google Auth failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormChange = (e) => {
+    setRegistrationForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!registrationForm.name || !registrationForm.email || !registrationForm.password) {
+      setError('All fields are required.');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    try {
+      await register(registrationForm.name, registrationForm.email, registrationForm.password, 'organizer');
+      // Registration successful! Move to Bank Details
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create account.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +104,7 @@ const RegisterPage = () => {
         {step === 1 && (
           <>
             <h1 className="auth-title">Create Organizer Account</h1>
-            <p className="auth-subtitle">Get started with EasyTicket</p>
+            <p className="auth-subtitle">Verify your email with Google to get started.</p>
 
             {error && <div className="alert alert-error">{error}</div>}
 
@@ -91,6 +126,75 @@ const RegisterPage = () => {
         )}
 
         {step === 2 && (
+          <>
+            <h1 className="auth-title">Complete Setup</h1>
+            <p className="auth-subtitle">Almost done! Choose a secure password.</p>
+
+            {error && <div className="alert alert-error">{error}</div>}
+
+            <form onSubmit={handleRegisterSubmit} noValidate>
+              <div className="form-group">
+                <label htmlFor="name">Full Name</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={registrationForm.name}
+                  onChange={handleFormChange}
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={registrationForm.email}
+                  disabled
+                  readOnly
+                  style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="password-wrapper">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Create a strong password"
+                    value={registrationForm.password}
+                    onChange={handleFormChange}
+                    disabled={loading}
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    tabIndex="-1"
+                  >
+                    {showPassword ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
+          </>
+        )}
+
+        {step === 3 && (
           <>
             <h1 className="auth-title">Add Bank Details</h1>
             <p className="auth-subtitle">Receive payouts for your ticket sales</p>

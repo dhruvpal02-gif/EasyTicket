@@ -95,31 +95,16 @@ export const sendOtp = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, otp } = req.body;
+    const { name, email, password, role } = req.body;
 
     // Basic presence validation
-    if (!name || !email || !password || !role || !otp) {
-      return res.status(400).json({ message: 'All fields, including OTP, are required.' });
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields are required.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // OTP Validation
-    const storedOtpData = otpStore.get(normalizedEmail);
-    if (!storedOtpData) {
-      return res.status(400).json({ message: 'No OTP found for this email. Please request a new one.' });
-    }
-    
-    if (Date.now() > storedOtpData.expiresAt) {
-      otpStore.delete(normalizedEmail);
-      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
-    }
-    
-    if (storedOtpData.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
-    }
-    
-    // Check for duplicate email again just in case
+    // Check for duplicate email
     const existing = await User.findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(409).json({ message: 'An account with this email already exists.' });
@@ -127,9 +112,6 @@ export const register = async (req, res) => {
 
     // Create user — password hashing happens in the pre-save hook on User model
     const user = await User.create({ name, email: normalizedEmail, password, role });
-
-    // Cleanup OTP
-    otpStore.delete(normalizedEmail);
 
     return res.status(201).json({
       user: safeUser(user),
