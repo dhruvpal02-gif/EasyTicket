@@ -432,6 +432,7 @@ export const verifyTicketPublic = async (req, res) => {
       status: ticket.status,
       paymentStatus: ticket.paymentStatus,
       attendeeName: ticket.attendeeName,
+      attendeePhoto: ticket.attendeePhoto,
       quantity: ticket.quantity,
       ticketTypeName: ticket.ticketTypeName,
       event: {

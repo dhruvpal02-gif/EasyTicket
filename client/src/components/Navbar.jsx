@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { 
@@ -50,8 +50,8 @@ const Navbar = () => {
             
             {/* Left side: Logo */}
             <div className="flex items-center">
-              <Link to="/" className="flex items-center gap-2 text-xl font-bold text-indigo-600" onClick={closeMenu}>
-                <Ticket className="w-6 h-6" />
+              <Link to="/" className="flex items-center gap-2 text-xl font-bold text-pink-600" onClick={closeMenu}>
+                <span>🎫</span>
                 <span>EasyTicket</span>
               </Link>
             </div>
@@ -78,15 +78,10 @@ const Navbar = () => {
                         </NavLink>
                         <NavLink to="/verify-ticket" className={navLinkClass}>
                           <QrCode className="w-4 h-4" />
-                          <span>Scan Tickets</span>
+                          <span>Scan & Verify</span>
                         </NavLink>
                       </>
                     )}
-                    
-                    <NavLink to="/verify" className={navLinkClass}>
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Verify Ticket</span>
-                    </NavLink>
                   </div>
 
                   {/* Primary CTA */}
@@ -121,10 +116,6 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <NavLink to="/verify" className={navLinkClass}>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Verify Ticket</span>
-                  </NavLink>
                   <Link to="/login" className="text-gray-600 hover:text-indigo-600 font-medium px-4 py-2 transition-colors">
                     Login
                   </Link>
@@ -191,15 +182,10 @@ const Navbar = () => {
                       </NavLink>
                       <NavLink to="/verify-ticket" className={mobileNavLinkClass} onClick={closeMenu}>
                         <QrCode className="w-5 h-5" />
-                        <span>Scan Tickets</span>
+                        <span>Scan & Verify</span>
                       </NavLink>
                     </>
                   )}
-                  
-                  <NavLink to="/verify" className={mobileNavLinkClass} onClick={closeMenu}>
-                    <ShieldCheck className="w-5 h-5" />
-                    <span>Verify Ticket</span>
-                  </NavLink>
 
                   <button 
                     onClick={() => { setShowLogoutModal(true); closeMenu(); }}
@@ -211,10 +197,6 @@ const Navbar = () => {
                 </>
               ) : (
                 <div className="space-y-4 pt-2">
-                  <NavLink to="/verify" className={mobileNavLinkClass} onClick={closeMenu}>
-                    <ShieldCheck className="w-5 h-5" />
-                    <span>Verify Ticket</span>
-                  </NavLink>
                   <div className="grid grid-cols-2 gap-3 px-2">
                     <Link to="/login" className="flex justify-center text-gray-700 bg-gray-100 hover:bg-gray-200 font-medium px-4 py-3 rounded-lg transition-colors" onClick={closeMenu}>
                       Login
