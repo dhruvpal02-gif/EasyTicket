@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, updatePayoutDetails, updateBankDetails, sendOtp } from '../controllers/authController.js';
+import { register, login, updatePayoutDetails, updateBankDetails, sendOtp, googleLogin } from '../controllers/authController.js';
 import { protect, requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -8,6 +8,7 @@ const router = express.Router();
 router.post('/send-otp', sendOtp);
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleLogin);
 
 // Protected routes
 router.get('/me', protect, (req, res) => {

@@ -247,3 +247,39 @@ export const updateBankDetails = async (req, res) => {
     return res.status(500).json({ message: 'Server error updating bank details.' });
   }
 };
+// -- POST /api/auth/google ----------------------------------------------------
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { email, displayName, photoURL, uid, role } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required from Google Auth.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      // Create new user with random password (since they use Google Auth)
+      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) + 'Ab1!';
+      
+      const assignedRole = role && ['customer', 'organizer'].includes(role) ? role : 'customer';
+
+      user = await User.create({
+        name: displayName || 'Google User',
+        email: normalizedEmail,
+        password: randomPassword,
+        role: assignedRole,
+      });
+    }
+
+    return res.status(200).json({
+      user: safeUser(user),
+      token: generateToken(user._id, user.role),
+    });
+  } catch (error) {
+    console.error('googleLogin error:', error.message);
+    return res.status(500).json({ message: 'Server error during Google login.' });
+  }
+};
