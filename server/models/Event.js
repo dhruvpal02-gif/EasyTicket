@@ -52,6 +52,20 @@ const eventSchema = new mongoose.Schema(
       required: [true, 'Event time is required'],
       trim: true,
     },
+    endDate: {
+      type: Date,
+      required: [true, 'Event end date is required'],
+    },
+    endTime: {
+      type: String,
+      required: [true, 'Event end time is required'],
+      trim: true,
+    },
+    category: {
+      type: String,
+      enum: ['Tech', 'Sports', 'Music', 'Food', 'General'],
+      default: 'General',
+    },
     venue: {
       type: String,
       required: [true, 'Venue is required'],

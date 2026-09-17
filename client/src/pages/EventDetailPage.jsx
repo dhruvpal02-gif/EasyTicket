@@ -36,7 +36,7 @@ const EventDetailPage = () => {
     navigate(`/book/${id}?typeId=${ticketTypeId}`);
   };
 
-  if (loading) return <div className="page-container"><p>Loading event…</p></div>;
+  if (loading) return <PageLoader text="Loading event..." />;
   if (error)   return <div className="page-container"><div className="alert alert-error">{error}</div></div>;
 
   return (

@@ -29,3 +29,10 @@ export const customerPhotoUpload = multer({
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
+
+// userProfileUpload — used on profile update (field: "profilePicture")
+export const userProfileUpload = multer({
+  storage,
+  fileFilter: imageFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});

@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, optionalAuth, requireRole } from '../middleware/authMiddleware.js';
+import { protect, optionalAuth, isOrganizer } from '../middleware/authMiddleware.js';
 import {
   createEvent,
   getPublicEvents,
@@ -13,20 +13,20 @@ import {
 
 const router = express.Router();
 
-// ── Public ────────────────────────────────────────────────────────────────────
+// 🌐 Public ------------------------------------------------------------------
 router.get('/', getPublicEvents);
 
-// ── Organizer-only ────────────────────────────────────────────────────────────
+// 🛡️ Organizer-only ----------------------------------------------------------
 // IMPORTANT: /my-events must be declared before /:id so Express doesn't
 // treat the string "my-events" as an event ID parameter.
-router.get('/my-events', protect, requireRole('organizer'), getMyEvents);
-router.post('/', protect, requireRole('organizer'), ...createEvent);
-router.put('/:id', protect, requireRole('organizer'), ...updateEvent);
-router.delete('/:id', protect, requireRole('organizer'), deleteEvent);
-router.patch('/:id/publish', protect, requireRole('organizer'), publishEvent);
-router.get('/:id/qr', protect, requireRole('organizer'), getEventQr);
+router.get('/my-events', protect, isOrganizer, getMyEvents);
+router.post('/', protect, isOrganizer, ...createEvent);
+router.put('/:id', protect, isOrganizer, ...updateEvent);
+router.delete('/:id', protect, isOrganizer, deleteEvent);
+router.patch('/:id/publish', protect, isOrganizer, publishEvent);
+router.get('/:id/qr', protect, isOrganizer, getEventQr);
 
-// ── Public (single event) ─────────────────────────────────────────────────────
+// 🌐 Public (single event) ----------------------------------------------------
 router.get('/:id', getEventById);
 
 export default router;

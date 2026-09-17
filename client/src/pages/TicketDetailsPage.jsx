@@ -56,7 +56,7 @@ const TicketDetailsPage = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500 font-sans">Loading ticket...</div>;
+  if (loading) return <PageLoader text="Loading ticket..." />;
   if (error || !ticket) return <div className="p-8 text-center text-red-500 font-sans">{error || 'Ticket not found.'}</div>;
 
   return (

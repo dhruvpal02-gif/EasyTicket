@@ -1,24 +1,27 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import useAuth from './hooks/useAuth';
 import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
 import EventDetailPage from './pages/EventDetailPage';
-import OrganizerDashboard from './pages/OrganizerDashboard';
-import CreateEventPage from './pages/CreateEventPage';
 import BookingPage from './pages/BookingPage';
+import CreateEventPage from './pages/CreateEventPage';
+import OrganizerDashboard from './pages/OrganizerDashboard';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import PrivateRoute from './components/PrivateRoute';
+import useAuth from './hooks/useAuth';
 import PaymentPage from './pages/PaymentPage';
 import MyTicketsPage from './pages/MyTicketsPage';
 import TicketDetailsPage from './pages/TicketDetailsPage';
 import VerifyTicketPage from './pages/VerifyTicketPage';
+import PageLoader from './components/PageLoader';
+import ProfilePage from './pages/ProfilePage';
+import BankDetailsPage from './pages/BankDetailsPage';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="page-container">Loading...</div>;
+    return <PageLoader />;
   }
 
   return (
@@ -39,6 +42,22 @@ function App() {
         <Route path="/tickets/:id" element={<TicketDetailsPage />} />
 
         {/* Protected routes (require login) */}
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <ProfilePage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile/bank"
+          element={
+            <PrivateRoute>
+              <BankDetailsPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={

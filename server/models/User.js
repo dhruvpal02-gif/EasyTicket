@@ -36,8 +36,10 @@ const userSchema = new mongoose.Schema(
       ifscCode: { type: String, trim: true },
       upiId: { type: String, trim: true },
     },
+    profilePicture: { type: String, default: '' },
     bankDetails: {
       accountName: { type: String, trim: true },
+      bankName: { type: String, trim: true },
       accountNumber: { type: String, trim: true },
       ifscCode: { type: String, trim: true },
     },

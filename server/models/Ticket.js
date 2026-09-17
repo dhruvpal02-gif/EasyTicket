@@ -63,6 +63,10 @@ const ticketSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    attendeeDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
     status: {
       type: String,
       enum: ['pending', 'confirmed', 'cancelled'],

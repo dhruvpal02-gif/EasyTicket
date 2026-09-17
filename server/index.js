@@ -5,6 +5,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import mongoSanitize from 'express-mongo-sanitize';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
@@ -14,7 +17,20 @@ dotenv.config();
 
 const app = express();
 
-// ── Middleware ────────────────────────────────────────────────────────────────
+// 🔧 Middleware -------------------------------------------------------------
+app.use(helmet());
+
+// Global rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  message: 'Too many requests from this IP, please try again in 15 minutes.'
+});
+app.use('/api', limiter);
+
+// Sanitize data against NoSQL query injection
+app.use(mongoSanitize());
+
 app.use(cors());
 app.use(express.json());
 

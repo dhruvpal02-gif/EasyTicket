@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../services/api';
+import PageLoader from '../components/PageLoader';
 import './BookingPage.css';
 
 const BookingPage = () => {
@@ -22,6 +23,8 @@ const BookingPage = () => {
     whatsappNumber: '',
   });
   const [attendeePhoto, setAttendeePhoto] = useState(null);
+  const [attendeeDetails, setAttendeeDetails] = useState({});
+  const handleDetailsChange = (e) => setAttendeeDetails(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   useEffect(() => {
     if (!ticketTypeId) return navigate(`/events/${eventId}`);
@@ -78,6 +81,7 @@ const BookingPage = () => {
       formData.append('quantity', qty);
       formData.append('attendeeName', form.attendeeName);
       formData.append('attendeePhone', form.whatsappNumber);
+      formData.append('attendeeDetails', JSON.stringify(attendeeDetails));
       if (attendeePhoto) {
         formData.append('attendeePhoto', attendeePhoto);
       }
@@ -97,7 +101,7 @@ const BookingPage = () => {
     }
   };
 
-  if (loading) return <div className="page-container"><p>Loading checkout...</p></div>;
+  if (loading) return <PageLoader text="Loading checkout..." />;
   if (!event || !ticketType) return <div className="page-container"><div className="alert alert-error">{error || 'Invalid booking.'}</div></div>;
 
   const available = ticketType.quantity - ticketType.sold;
@@ -139,6 +143,63 @@ const BookingPage = () => {
                 <label htmlFor="whatsappNumber">WhatsApp Number (10 digits)</label>
                 <input type="tel" id="whatsappNumber" name="whatsappNumber" value={form.whatsappNumber} onChange={handleChange} placeholder="9876543210" pattern="\d{10}" maxLength="10" required />
               </div>
+              {event.category === 'Tech' && (
+                <>
+                  <div className="form-group">
+                    <label>Company Name</label>
+                    <input type="text" name="companyName" value={attendeeDetails.companyName || ''} onChange={handleDetailsChange} required className="form-control" placeholder="e.g. Acme Corp" />
+                  </div>
+                  <div className="form-group">
+                    <label>Job Role</label>
+                    <input type="text" name="jobRole" value={attendeeDetails.jobRole || ''} onChange={handleDetailsChange} required className="form-control" placeholder="e.g. Software Engineer" />
+                  </div>
+                  <div className="form-group">
+                    <label>LinkedIn URL</label>
+                    <input type="url" name="linkedinUrl" value={attendeeDetails.linkedinUrl || ''} onChange={handleDetailsChange} className="form-control" placeholder="https://linkedin.com/in/..." />
+                  </div>
+                </>
+              )}
+              {event.category === 'Sports' && (
+                <>
+                  <div className="form-group">
+                    <label>T-Shirt Size</label>
+                    <select name="tshirtSize" value={attendeeDetails.tshirtSize || ''} onChange={handleDetailsChange} required className="form-control">
+                      <option value="">Select Size</option>
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="XXL">XXL</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Emergency Contact</label>
+                    <input type="text" name="emergencyContact" value={attendeeDetails.emergencyContact || ''} onChange={handleDetailsChange} required className="form-control" placeholder="e.g. Name and Phone" />
+                  </div>
+                </>
+              )}
+              {event.category === 'Music' && (
+                <>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                    <input type="checkbox" id="ageVerification" name="ageVerification" checked={attendeeDetails.ageVerification === 'true'} onChange={(e) => handleDetailsChange({ target: { name: 'ageVerification', value: e.target.checked ? 'true' : 'false' } })} required style={{ width: 'auto' }} />
+                    <label htmlFor="ageVerification" style={{ margin: 0 }}>I confirm I am 18+ years old</label>
+                  </div>
+                </>
+              )}
+              {event.category === 'Food' && (
+                <>
+                  <div className="form-group">
+                    <label>Dietary Preferences</label>
+                    <select name="dietaryPreference" value={attendeeDetails.dietaryPreference || ''} onChange={handleDetailsChange} required className="form-control">
+                      <option value="">Select Preference</option>
+                      <option value="Veg">Vegetarian</option>
+                      <option value="Non-Veg">Non-Vegetarian</option>
+                      <option value="Vegan">Vegan</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               {event.requireAttendeePhoto && (
                 <div className="form-group" style={{ marginTop: '1.5rem' }}>
                   <label style={{ fontWeight: 'bold', color: '#1f2937', marginBottom: '0.5rem', display: 'block' }}>

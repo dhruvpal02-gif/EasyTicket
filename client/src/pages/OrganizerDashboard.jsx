@@ -214,7 +214,7 @@ const OrganizerDashboard = () => {
     }
   };
 
-  if (loading) return <div className="page-container"><p>Loading dashboard...</p></div>;
+  if (loading) return <PageLoader text="Loading dashboard..." />;
 
   return (
     <div className="page-container dashboard-container">

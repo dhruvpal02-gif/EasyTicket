@@ -18,13 +18,24 @@ const CreateEventPage = () => {
   
   const [successEvent, setSuccessEvent] = useState(null);
 
-  const [step, setStep] = useState(1); // 1 = Template Selection, 2 = Form Details
+  const loadDraft = () => {
+    try {
+      const draft = localStorage.getItem('draftEvent');
+      return draft ? JSON.parse(draft) : null;
+    } catch { return null; }
+  };
+  const draft = loadDraft();
 
-  const [form, setForm] = useState({
+  const [step, setStep] = useState(draft?.step ?? 1); // 1 = Template Selection, 2 = Form Details
+
+  const [form, setForm] = useState(draft?.form ?? {
     title: '',
     description: '',
     date: '',
     time: '',
+    endDate: '',
+    endTime: '',
+    category: 'General',
     venue: '',
     city: '',
   });
@@ -33,31 +44,19 @@ const CreateEventPage = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('idle');
 
-  const [ticketTypes, setTicketTypes] = useState([
+  const [ticketTypes, setTicketTypes] = useState(draft?.ticketTypes ?? [
     { name: 'Regular', price: 0, quantity: 100, description: 'Standard admission' }
   ]);
 
-  const [eventTemplate, setEventTemplate] = useState('mela');
-  const [entryPolicy, setEntryPolicy] = useState('multiple');
-  const [requireAttendeePhoto, setRequireAttendeePhoto] = useState(false);
+  const [eventTemplate, setEventTemplate] = useState(draft?.eventTemplate ?? 'mela');
+  const [entryPolicy, setEntryPolicy] = useState(draft?.entryPolicy ?? 'multiple');
+  const [requireAttendeePhoto, setRequireAttendeePhoto] = useState(draft?.requireAttendeePhoto ?? false);
 
-  // Restore draft event from localStorage
+  // Auto-save draft on change
   useEffect(() => {
-    const draft = localStorage.getItem('draftEvent');
-    if (draft) {
-      try {
-        const parsed = JSON.parse(draft);
-        if (parsed.form) setForm(parsed.form);
-        if (parsed.ticketTypes) setTicketTypes(parsed.ticketTypes);
-        if (parsed.eventTemplate) setEventTemplate(parsed.eventTemplate);
-        if (parsed.entryPolicy) setEntryPolicy(parsed.entryPolicy);
-        if (parsed.requireAttendeePhoto !== undefined) setRequireAttendeePhoto(parsed.requireAttendeePhoto);
-        if (parsed.step) setStep(parsed.step);
-      } catch (e) {
-        console.error("Failed to parse draft event", e);
-      }
-    }
-  }, []);
+    const draftData = { form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step };
+    localStorage.setItem('draftEvent', JSON.stringify(draftData));
+  }, [form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -118,7 +117,7 @@ const CreateEventPage = () => {
   };
 
   const validate = () => {
-    if (!form.title || !form.description || !form.date || !form.time || !form.venue || !form.city) {
+    if (!form.title || !form.description || !form.date || !form.time || !form.endDate || !form.endTime || !form.venue || !form.city || !form.category) {
       return 'All event details are required.';
     }
     if (ticketTypes.length === 0) return 'At least one ticket type is required.';
@@ -298,9 +297,19 @@ const CreateEventPage = () => {
               <label htmlFor="description">Description</label>
               <textarea id="description" name="description" rows="4" value={form.description} onChange={handleChange} placeholder="What is this event about?" required />
             </div>
+            <div className="form-group">
+              <label htmlFor="category">Event Category</label>
+              <select id="category" name="category" value={form.category} onChange={handleChange} required className="w-full form-control">
+                <option value="General">General</option>
+                <option value="Tech">Tech</option>
+                <option value="Sports">Sports</option>
+                <option value="Music">Music</option>
+                <option value="Food">Food</option>
+              </select>
+            </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="date">Date</label>
+                  <label htmlFor="date">Start Date</label>
                   <div style={{ position: 'relative' }}>
                     <input type="date" id="date" name="date" value={form.date} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
                     <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
@@ -318,9 +327,47 @@ const CreateEventPage = () => {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label htmlFor="time">Time</label>
+                  <label htmlFor="time">Start Time</label>
                   <div style={{ position: 'relative' }}>
                     <input type="time" id="time" name="time" value={form.time} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="form-row" style={{ marginTop: '1rem' }}>
+                <div className="form-group">
+                  <label htmlFor="endDate">End Date</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type="date" id="endDate" name="endDate" value={form.endDate} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="endTime">End Time</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type="time" id="endTime" name="endTime" value={form.endTime} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
                     <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -406,7 +453,15 @@ const CreateEventPage = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Ticket Name</label>
-                      <input type="text" value={ticket.name} onChange={(e) => handleTicketChange(index, 'name', e.target.value)} placeholder="e.g. VIP, General Admission" required />
+                      <input list={`ticketNames-${index}`} value={ticket.name} onChange={(e) => handleTicketChange(index, 'name', e.target.value)} placeholder="e.g. VIP, General Admission" required />
+                      <datalist id={`ticketNames-${index}`}>
+                        <option value="Regular" />
+                        <option value="VIP" />
+                        <option value="VVIP" />
+                        <option value="Early Bird" />
+                        <option value="Student Pass" />
+                        <option value="Backstage Pass" />
+                      </datalist>
                     </div>
                   </div>
                   <div className="form-row">

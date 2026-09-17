@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, optionalAuth, requireRole } from '../middleware/authMiddleware.js';
+import { protect, optionalAuth, requireRole, isOrganizer } from '../middleware/authMiddleware.js';
 import {
   createTicket,
   getMyTickets,
@@ -14,10 +14,10 @@ import {
 
 const router = express.Router();
 
-// 🎟️ Public Track / Verify Route
+// 🌐 Public Track / Verify Route
 router.get('/track/:identifier', verifyTicketPublic);
 
-// ── Customer & Guest Routes ───────────────────────────────────────────────────
+// 🛡️ Customer & Guest Routes
 // /my-tickets MUST come before /:id to prevent Express from treating 'my-tickets' as an ID
 router.get('/my-tickets', protect, requireRole('customer'), getMyTickets);
 router.post('/', optionalAuth, ...createTicket);
@@ -26,8 +26,8 @@ router.post('/:id/create-razorpay-order', optionalAuth, createRazorpayOrder);
 router.post('/:id/verify-payment', optionalAuth, verifyPayment);
 router.post('/:id/fail', optionalAuth, failPayment);
 
-// ── Organizer Routes ──────────────────────────────────────────────────────────
-router.post('/verify', protect, requireRole('organizer'), verifyTicket);
-router.get('/event/:eventId', protect, requireRole('organizer'), getEventTickets);
+// 🛡️ Organizer Routes
+router.post('/verify', protect, isOrganizer, verifyTicket);
+router.get('/event/:eventId', protect, isOrganizer, getEventTickets);
 
 export default router;

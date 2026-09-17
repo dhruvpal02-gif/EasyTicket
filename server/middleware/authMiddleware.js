@@ -65,3 +65,5 @@ export const requireRole = (...roles) => {
     next();
   };
 };
+
+export const isOrganizer = requireRole('organizer');

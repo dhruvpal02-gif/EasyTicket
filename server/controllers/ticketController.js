@@ -27,7 +27,7 @@ export const createTicket = [
   runUploadIfMultipart,
   async (req, res) => {
     try {
-      const { eventId, ticketTypeId, quantity, attendeeName, attendeeEmail, attendeePhone } = req.body;
+      const { eventId, ticketTypeId, quantity, attendeeName, attendeeEmail, attendeePhone, attendeeDetails } = req.body;
       const qty = parseInt(quantity, 10);
 
       // 1. Basic validation
@@ -90,7 +90,8 @@ export const createTicket = [
         attendeeName,
         attendeeEmail,
         attendeePhone,
-        attendeePhoto: req.file ? req.file.path : '', // Cloudinary secure_url
+        attendeePhoto: req.file ? req.file.path : '',
+          attendeeDetails: attendeeDetails ? (typeof attendeeDetails === 'string' ? JSON.parse(attendeeDetails) : attendeeDetails) : {},
         status: 'pending',
         qrToken: generateQRToken(),
       });

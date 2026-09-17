@@ -29,6 +29,7 @@ const safeUser = (user) => ({
   createdAt: user.createdAt,
   payoutDetails: user.payoutDetails,
   bankDetails: user.bankDetails,
+  profilePicture: user.profilePicture,
 });
 
 // ── POST /api/auth/send-otp ───────────────────────────────────────────────────
@@ -201,9 +202,9 @@ export const updatePayoutDetails = async (req, res) => {
 
 export const updateBankDetails = async (req, res) => {
   try {
-    const { accountName, accountNumber, ifscCode } = req.body;
+    const { accountName, bankName, accountNumber, ifscCode } = req.body;
     
-    if (!accountName && !accountNumber && !ifscCode) {
+    if (!accountName && !bankName && !accountNumber && !ifscCode) {
       return res.status(400).json({ message: 'Please provide bank details to update.' });
     }
 
@@ -214,6 +215,7 @@ export const updateBankDetails = async (req, res) => {
 
     user.bankDetails = {
       accountName: accountName || user.bankDetails?.accountName,
+      bankName: bankName || user.bankDetails?.bankName,
       accountNumber: accountNumber || user.bankDetails?.accountNumber,
       ifscCode: ifscCode || user.bankDetails?.ifscCode,
     };
@@ -227,6 +229,33 @@ export const updateBankDetails = async (req, res) => {
   } catch (error) {
     console.error('updateBankDetails error:', error.message);
     return res.status(500).json({ message: 'Server error updating bank details.' });
+  }
+};
+
+// -- PATCH /api/auth/profile ----------------------------------------------
+export const updateProfile = async (req, res) => {
+  try {
+    const { name } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    if (name) user.name = name;
+    if (req.file) {
+      user.profilePicture = req.file.path;
+    }
+
+    const updatedUser = await user.save();
+
+    return res.status(200).json({
+      message: 'Profile updated successfully.',
+      user: safeUser(updatedUser)
+    });
+  } catch (error) {
+    console.error('updateProfile error:', error.message);
+    return res.status(500).json({ message: 'Server error updating profile.' });
   }
 };
 // -- POST /api/auth/google ----------------------------------------------------

@@ -31,7 +31,7 @@ const MyTicketsPage = () => {
         <p>View and manage your event bookings</p>
       </div>
 
-      {loading && <p className="mytickets-status">Loading your tickets...</p>}
+      {loading && <PageLoader text="Loading your tickets..." fullScreen={false} />}
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && !error && tickets.length === 0 && (

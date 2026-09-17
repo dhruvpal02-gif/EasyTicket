@@ -1,5 +1,6 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Loader2 } from 'lucide-react';
 import api from '../services/api';
 import { getImageUrl } from '../utils/imageUtils';
 
@@ -133,7 +134,7 @@ const VerifyTicketPage = () => {
 
         {/* Loading */}
         {!result && !error && loading && (
-          <div className="text-center py-12 font-bold text-indigo-600 animate-pulse">Verifying ticket...</div>
+          <div className="text-center py-12 flex flex-col items-center"><Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" /><span className="font-bold text-indigo-600 animate-pulse">Verifying ticket...</span></div>
         )}
 
         {/* Scanner UI */}
@@ -169,7 +170,7 @@ const VerifyTicketPage = () => {
         {result && (
           <div className={`p-6 rounded-2xl relative overflow-hidden ${result.valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
             <h3 className={`text-xl font-bold mb-4 flex items-center gap-2 ${result.valid ? 'text-green-800' : 'text-red-800'}`}>
-              {result.valid ? '✅ Ticket Valid' : '❌ Invalid / Unpaid'}
+              {result.valid ? '? Ticket Valid' : '? Invalid / Unpaid'}
             </h3>
             
             <div className="space-y-4">
@@ -228,7 +229,7 @@ const VerifyTicketPage = () => {
         {/* Error UI (From Scanner/Manual Failures) */}
         {error && !loading && (
           <div className="p-6 rounded-2xl bg-red-50 border border-red-200 text-center">
-            <h3 className="text-xl font-bold text-red-800 mb-2">❌ Invalid Ticket</h3>
+            <h3 className="text-xl font-bold text-red-800 mb-2">? Invalid Ticket</h3>
             <p className="text-red-600 font-medium mb-6">
               {error.error || error.message || 'Verification failed.'}
             </p>

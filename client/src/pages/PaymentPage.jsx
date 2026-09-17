@@ -124,7 +124,7 @@ const PaymentPage = () => {
     }
   };
 
-  if (loading) return <div className="page-container"><p>Loading payment...</p></div>;
+  if (loading) return <PageLoader text="Loading payment..." />;
   if (!ticket) return <div className="page-container"><div className="alert alert-error">{error || 'Ticket not found.'}</div></div>;
 
   return (
