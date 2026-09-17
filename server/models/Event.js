@@ -54,11 +54,11 @@ const eventSchema = new mongoose.Schema(
     },
     endDate: {
       type: Date,
-      required: [true, 'Event end date is required'],
+      required: false,
     },
     endTime: {
       type: String,
-      required: [true, 'Event end time is required'],
+      required: false,
       trim: true,
     },
     category: {
@@ -108,6 +108,7 @@ const eventSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isOngoing: { type: Boolean, default: false },
     requireAttendeePhoto: {
       type: Boolean,
       default: false,

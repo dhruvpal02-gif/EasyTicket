@@ -51,12 +51,13 @@ const CreateEventPage = () => {
   const [eventTemplate, setEventTemplate] = useState(draft?.eventTemplate ?? 'mela');
   const [entryPolicy, setEntryPolicy] = useState(draft?.entryPolicy ?? 'multiple');
   const [requireAttendeePhoto, setRequireAttendeePhoto] = useState(draft?.requireAttendeePhoto ?? false);
+  const [isOngoing, setIsOngoing] = useState(draft?.isOngoing ?? false);
 
   // Auto-save draft on change
   useEffect(() => {
-    const draftData = { form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step };
+    const draftData = { form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step, isOngoing };
     localStorage.setItem('draftEvent', JSON.stringify(draftData));
-  }, [form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step]);
+  }, [form, ticketTypes, eventTemplate, entryPolicy, requireAttendeePhoto, step, isOngoing]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -117,9 +118,17 @@ const CreateEventPage = () => {
   };
 
   const validate = () => {
-    if (!form.title || !form.description || !form.date || !form.time || !form.endDate || !form.endTime || !form.venue || !form.city || !form.category) {
+    if (!form.title || !form.description || !form.date || !form.time || !form.venue || !form.city || !form.category) {
       return 'All event details are required.';
     }
+    
+    // Check end date/time only if it's not simple mode and not an ongoing event
+    if (eventTemplate !== 'mela' && !isOngoing) {
+      if (!form.endDate || !form.endTime) {
+        return 'End Date and End Time are required for this event type.';
+      }
+    }
+
     if (ticketTypes.length === 0) return 'At least one ticket type is required.';
     for (let t of ticketTypes) {
       if (!t.name) return 'Ticket name is required.';
@@ -154,6 +163,7 @@ const CreateEventPage = () => {
       formData.append('eventTemplate', eventTemplate);
       formData.append('entryPolicy', entryPolicy);
       formData.append('requireAttendeePhoto', requireAttendeePhoto);
+      formData.append('isOngoing', isOngoing);
       if (image) {
         formData.append('image', image);
       }
@@ -313,14 +323,7 @@ const CreateEventPage = () => {
                   <div style={{ position: 'relative' }}>
                     <input type="date" id="date" name="date" value={form.date} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
                     <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        strokeWidth={1.5} 
-                        stroke="currentColor" 
-                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', color: '#9ca3af' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                       </svg>
                     </span>
@@ -331,58 +334,45 @@ const CreateEventPage = () => {
                   <div style={{ position: 'relative' }}>
                     <input type="time" id="time" name="time" value={form.time} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
                     <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        strokeWidth={1.5} 
-                        stroke="currentColor" 
-                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
-                      >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', color: '#9ca3af' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                       </svg>
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="form-row" style={{ marginTop: '1rem' }}>
-                <div className="form-group">
-                  <label htmlFor="endDate">End Date</label>
-                  <div style={{ position: 'relative' }}>
-                    <input type="date" id="endDate" name="endDate" value={form.endDate} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
-                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        strokeWidth={1.5} 
-                        stroke="currentColor" 
-                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                      </svg>
-                    </span>
+              {eventTemplate === 'zoo' && (
+                <div className="form-group" style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input type="checkbox" id="isOngoing" checked={isOngoing} onChange={(e) => setIsOngoing(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+                  <label htmlFor="isOngoing" style={{ margin: 0, cursor: 'pointer' }}>Ongoing Event (No End Date)</label>
+                </div>
+              )}
+              {eventTemplate !== 'mela' && !isOngoing && (
+                <div className="form-row" style={{ marginTop: '1rem' }}>
+                  <div className="form-group">
+                    <label htmlFor="endDate">End Date</label>
+                    <div style={{ position: 'relative' }}>
+                      <input type="date" id="endDate" name="endDate" value={form.endDate} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                      <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', color: '#9ca3af' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="endTime">End Time</label>
+                    <div style={{ position: 'relative' }}>
+                      <input type="time" id="endTime" name="endTime" value={form.endTime} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
+                      <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', color: '#9ca3af' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="endTime">End Time</label>
-                  <div style={{ position: 'relative' }}>
-                    <input type="time" id="endTime" name="endTime" value={form.endTime} onChange={handleChange} onClick={(e) => e.target.showPicker && e.target.showPicker()} required style={{ width: '100%', paddingRight: '2.5rem' }} />
-                    <span className="pointer-events-none" style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', display: 'flex' }}>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        strokeWidth={1.5} 
-                        stroke="currentColor" 
-                        style={{ width: '20px', height: '20px', color: '#9ca3af' }}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="venue">Venue Name</label>
@@ -453,7 +443,7 @@ const CreateEventPage = () => {
                   <div className="form-row">
                     <div className="form-group">
                       <label>Ticket Name</label>
-                      <input list={`ticketNames-${index}`} value={ticket.name} onChange={(e) => handleTicketChange(index, 'name', e.target.value)} placeholder="e.g. VIP, General Admission" required />
+                      <input type="text" list={`ticketNames-${index}`} value={ticket.name} onChange={(e) => handleTicketChange(index, 'name', e.target.value)} placeholder="e.g. VIP, General Admission" required />
                       <datalist id={`ticketNames-${index}`}>
                         <option value="Regular" />
                         <option value="VIP" />
@@ -461,6 +451,7 @@ const CreateEventPage = () => {
                         <option value="Early Bird" />
                         <option value="Student Pass" />
                         <option value="Backstage Pass" />
+                        <option value="Group Pass" />
                       </datalist>
                     </div>
                   </div>
@@ -474,10 +465,12 @@ const CreateEventPage = () => {
                       <input type="number" min="1" value={ticket.quantity} onChange={(e) => handleTicketChange(index, 'quantity', Number(e.target.value))} required />
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label>Description (Optional)</label>
-                    <input type="text" value={ticket.description} onChange={(e) => handleTicketChange(index, 'description', e.target.value)} placeholder="e.g. Includes front row access" />
-                  </div>
+                  {eventTemplate !== 'mela' && (
+                    <div className="form-group">
+                      <label>Description (Optional)</label>
+                      <input type="text" value={ticket.description} onChange={(e) => handleTicketChange(index, 'description', e.target.value)} placeholder="e.g. Includes front row access" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

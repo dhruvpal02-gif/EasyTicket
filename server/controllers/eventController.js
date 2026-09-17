@@ -38,7 +38,7 @@ export const createEvent = [
   runUploadIfMultipart,
   async (req, res) => {
     try {
-      const { title, description, date, time, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
+      const { title, description, date, time, endDate, endTime, category, isOngoing, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
 
       if (!title || !description || !date || !time || !venue || !city) {
         return res.status(400).json({ message: 'All event fields are required.' });
@@ -60,6 +60,10 @@ export const createEvent = [
         description,
         date,
         time,
+        endDate: endDate || null,
+        endTime: endTime || null,
+        category: category || 'General',
+        isOngoing: isOngoing === 'true' || isOngoing === true,
         venue,
         city,
         image: resolveImage(req),
@@ -137,12 +141,16 @@ export const updateEvent = [
         return res.status(403).json({ message: 'You are not the owner of this event.' });
       }
 
-      const { title, description, date, time, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
+      const { title, description, date, time, endDate, endTime, category, isOngoing, venue, city, eventTemplate, entryPolicy, requireAttendeePhoto } = req.body;
 
       if (title)       event.title       = title;
       if (description) event.description = description;
       if (date)        event.date        = date;
       if (time)        event.time        = time;
+      if (endDate !== undefined) event.endDate = endDate;
+      if (endTime !== undefined) event.endTime = endTime;
+      if (category)    event.category    = category;
+      if (isOngoing !== undefined) event.isOngoing = isOngoing === 'true' || isOngoing === true;
       if (venue)       event.venue       = venue;
       if (city)        event.city        = city;
       if (eventTemplate) event.eventTemplate = eventTemplate;

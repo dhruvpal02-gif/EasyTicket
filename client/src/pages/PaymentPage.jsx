@@ -1,3 +1,4 @@
+import PageLoader from '../components/PageLoader';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
